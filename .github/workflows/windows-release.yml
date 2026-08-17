@@ -1,0 +1,101 @@
+name: Windows release candidate
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Semantic version for a manually dispatched candidate
+        required: true
+        default: 0.1.2
+
+permissions:
+  contents: read
+
+concurrency:
+  group: manager-windows-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.24.x"
+          cache: true
+      - run: go test ./...
+      - run: go vet ./...
+      - run: go build ./cmd/longhub-manager
+
+  candidate:
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v')
+    needs: test
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.24.x"
+          cache: true
+      - name: Resolve and validate release version
+        id: version
+        shell: pwsh
+        env:
+          DISPATCH_VERSION: ${{ inputs.version }}
+          RELEASE_REF: ${{ github.ref }}
+        run: |
+          $version = if ($env:RELEASE_REF.StartsWith('refs/tags/v')) {
+            $env:RELEASE_REF.Substring('refs/tags/v'.Length)
+          } else {
+            $env:DISPATCH_VERSION
+          }
+          if ($version -notmatch '^(0|[1-9][0-9]{0,8})\.(0|[1-9][0-9]{0,8})\.(0|[1-9][0-9]{0,8})$') {
+            throw 'Release version must be x.y.z'
+          }
+          "value=$version" >> $env:GITHUB_OUTPUT
+      - name: Install NSIS
+        shell: pwsh
+        run: choco install nsis --no-progress --yes
+      - name: Build unsigned candidate for SignPath
+        shell: pwsh
+        env:
+          RELEASE_VERSION: ${{ steps.version.outputs.value }}
+        run: |
+          ./scripts/build-windows-release.ps1 `
+            -Version $env:RELEASE_VERSION `
+            -CloudApiBaseUrl 'https://154-9-26-158.sslip.io' `
+            -AllowUnsigned
+      - name: Verify candidate boundary and record digest
+        shell: pwsh
+        env:
+          RELEASE_VERSION: ${{ steps.version.outputs.value }}
+        run: |
+          $installer = Join-Path $PWD "release/LongHub-Manager-Setup-$env:RELEASE_VERSION.exe"
+          if (-not (Test-Path -LiteralPath $installer -PathType Leaf)) {
+            throw 'Manager installer was not produced'
+          }
+          $signature = Get-AuthenticodeSignature -LiteralPath $installer
+          if ($signature.Status -ne 'NotSigned') {
+            throw "Unsigned candidate has unexpected signature status: $($signature.Status)"
+          }
+          $hash = (Get-FileHash -LiteralPath $installer -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash  LongHub-Manager-Setup-$env:RELEASE_VERSION.exe" |
+            Set-Content -LiteralPath "$installer.sha256" -Encoding ascii -NoNewline
+          if (Test-Path -LiteralPath 'release/artifacts') {
+            throw 'Manager candidate must not contain Cloud artifacts'
+          }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: longhub-manager-${{ steps.version.outputs.value }}-unsigned
+          path: |
+            release/LongHub-Manager-Setup-${{ steps.version.outputs.value }}.exe
+            release/LongHub-Manager-Setup-${{ steps.version.outputs.value }}.exe.sha256
+          if-no-files-found: error
+          retention-days: 14

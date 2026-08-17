@@ -1,0 +1,11 @@
+/release/
+/.stage-*/
+*.exe
+*.msi
+*.pfx
+*.p12
+*.cer
+*.key
+*.pem
+*.sha256
+cmd/longhub-manager/resource.syso
