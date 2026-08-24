@@ -13,6 +13,8 @@ import (
 
 const (
 	trayCallbackMessage = 0x8001
+	trayActivateMessage = 0x8002
+	trayWindowClassName = "LongHubManagerTrayWindowV3"
 	wmClose             = 0x0010
 	wmDestroy           = 0x0002
 	wmLButtonUp         = 0x0202
@@ -27,7 +29,6 @@ const (
 	mfSeparator         = 0x00000800
 	tpmReturnCommand    = 0x00000100
 	tpmRightButton      = 0x00000002
-	swShowNormal        = 1
 	idiApplication      = 32512
 	trayCommandOpen     = 1001
 	trayCommandExit     = 1002
@@ -91,6 +92,7 @@ var (
 	trayShell32          = syscall.NewLazyDLL("shell32.dll")
 	trayKernel32         = syscall.NewLazyDLL("kernel32.dll")
 	trayRegisterClass    = trayUser32.NewProc("RegisterClassExW")
+	trayFindWindow       = trayUser32.NewProc("FindWindowW")
 	trayUnregisterClass  = trayUser32.NewProc("UnregisterClassW")
 	trayCreateWindow     = trayUser32.NewProc("CreateWindowExW")
 	trayDestroyWindow    = trayUser32.NewProc("DestroyWindow")
@@ -108,11 +110,38 @@ var (
 	trayGetCursorPos     = trayUser32.NewProc("GetCursorPos")
 	traySetForeground    = trayUser32.NewProc("SetForegroundWindow")
 	trayShellNotifyIcon  = trayShell32.NewProc("Shell_NotifyIconW")
-	trayShellExecute     = trayShell32.NewProc("ShellExecuteW")
 	trayGetModuleHandle  = trayKernel32.NewProc("GetModuleHandleW")
 	trayWindowProcedure  = syscall.NewCallback(trayWindowProc)
 	trayStates           sync.Map
 )
+
+type trayFindWindowFunc func(*uint16) uintptr
+type trayPostMessageFunc func(uintptr, uint32) uintptr
+
+func activateExistingManager() bool {
+	return activateExistingManagerWith(
+		func(className *uint16) uintptr {
+			window, _, _ := trayFindWindow.Call(uintptr(unsafe.Pointer(className)), 0)
+			return window
+		},
+		func(window uintptr, message uint32) uintptr {
+			posted, _, _ := trayPostMessage.Call(window, uintptr(message), 0, 0)
+			return posted
+		},
+	)
+}
+
+func activateExistingManagerWith(findWindow trayFindWindowFunc, postMessage trayPostMessageFunc) bool {
+	if findWindow == nil || postMessage == nil {
+		return false
+	}
+	className, err := syscall.UTF16PtrFromString(trayWindowClassName)
+	if err != nil {
+		return false
+	}
+	window := findWindow(className)
+	return window != 0 && postMessage(window, trayActivateMessage) != 0
+}
 
 func startPlatformTray(
 	ctx context.Context,
@@ -137,7 +166,7 @@ func runTray(
 ) {
 	runtime.LockOSThread()
 	defer runtime.UnlockOSThread()
-	className, _ := syscall.UTF16PtrFromString("LongHubManagerTrayWindowV2")
+	className, _ := syscall.UTF16PtrFromString(trayWindowClassName)
 	instance, _, _ := trayGetModuleHandle.Call(0)
 	windowClass := trayWindowClass{
 		cbSize:    uint32(unsafe.Sizeof(trayWindowClass{})),
@@ -203,6 +232,12 @@ func runTray(
 
 func trayWindowProc(hwnd uintptr, message uint32, wParam, lParam uintptr) uintptr {
 	switch message {
+	case trayActivateMessage:
+		value, ok := trayStates.Load(hwnd)
+		if ok {
+			openTrayPage(value.(*trayWindowState).pageURL)
+		}
+		return 0
 	case trayCallbackMessage:
 		value, ok := trayStates.Load(hwnd)
 		if !ok {
@@ -262,17 +297,5 @@ func trayMenuCommand(hwnd uintptr) uint32 {
 }
 
 func openTrayPage(pageURL string) {
-	operation, _ := syscall.UTF16PtrFromString("open")
-	target, err := syscall.UTF16PtrFromString(pageURL)
-	if err != nil {
-		return
-	}
-	trayShellExecute.Call(
-		0,
-		uintptr(unsafe.Pointer(operation)),
-		uintptr(unsafe.Pointer(target)),
-		0,
-		0,
-		swShowNormal,
-	)
+	openEmbeddedManagerWindow(pageURL)
 }

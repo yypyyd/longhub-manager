@@ -37,6 +37,9 @@ func main() {
 		}
 		return
 	}
+	if mode == managerStartupInteractive && activateExistingManager() {
+		return
+	}
 
 	token, err := startupToken()
 	if err != nil {
@@ -73,7 +76,18 @@ func main() {
 	port := envPort("LONGHUB_MANAGER_PORT", 19527)
 	listener, err := net.Listen("tcp4", net.JoinHostPort("127.0.0.1", strconv.Itoa(port)))
 	if err != nil {
-		log.Fatalf("无法绑定本地管家端口: %v", err)
+		if mode == managerStartupInteractive {
+			// Prefer activating this version's existing tray instance. If an older
+			// browser-based Manager owns the legacy port, use a fresh loopback port
+			// so installing the desktop build is immediately effective.
+			if activateExistingManager() {
+				return
+			}
+			listener, err = net.Listen("tcp4", "127.0.0.1:0")
+		}
+		if err != nil {
+			log.Fatalf("无法绑定本地管家端口: %v", err)
+		}
 	}
 	defer listener.Close()
 
@@ -94,6 +108,7 @@ func main() {
 	if err := startPlatformTray(ctx, stop, managerPageURL(listener.Addr().String(), token), mode == managerStartupInteractive); err != nil {
 		log.Printf("系统托盘暂不可用")
 	}
+	defer closeEmbeddedManagerWindow()
 	if mode == managerStartupGateway {
 		go func() {
 			if launchErr := superviseAutostartGateway(ctx, adapter); launchErr != nil && !errors.Is(launchErr, context.Canceled) {
