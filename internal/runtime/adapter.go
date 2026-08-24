@@ -155,13 +155,18 @@ type CommandRunner interface {
 type OSCommandRunner struct{}
 
 func (OSCommandRunner) Run(ctx context.Context, name string, args ...string) ([]byte, error) {
-	return exec.CommandContext(ctx, name, args...).CombinedOutput()
+	name, args = resolveWindowsShimCommand(name, args)
+	command := exec.CommandContext(ctx, name, args...)
+	configureBackgroundCommand(command)
+	return command.CombinedOutput()
 }
 
 // RunWithEnv is used only for validation against a staged config candidate.
 // It never accepts environment entries from an HTTP request.
 func (OSCommandRunner) RunWithEnv(ctx context.Context, env []string, name string, args ...string) ([]byte, error) {
+	name, args = resolveWindowsShimCommand(name, args)
 	command := exec.CommandContext(ctx, name, args...)
+	configureBackgroundCommand(command)
 	command.Env = mergeEnvironment(os.Environ(), env)
 	return command.CombinedOutput()
 }
@@ -214,7 +219,9 @@ func (OSCommandRunner) InstallFreeBytes(ctx context.Context, path string) (int64
 			return 0, err
 		}
 		script := `& { param([string]$target); $root = [System.IO.Path]::GetPathRoot($target); if ([string]::IsNullOrWhiteSpace($root)) { exit 2 }; $drive = [System.IO.DriveInfo]::new($root); [Console]::Out.Write([int64]$drive.AvailableFreeSpace) }`
-		output, err := exec.CommandContext(ctx, powershell, "-NoProfile", "-NonInteractive", "-Command", script, path).Output()
+		command := exec.CommandContext(ctx, powershell, "-NoProfile", "-NonInteractive", "-Command", script, path)
+		configureBackgroundCommand(command)
+		output, err := command.Output()
 		if err != nil {
 			return 0, err
 		}
@@ -224,7 +231,9 @@ func (OSCommandRunner) InstallFreeBytes(ctx context.Context, path string) (int64
 	if err != nil {
 		return 0, err
 	}
-	output, err := exec.CommandContext(ctx, df, "-Pk", "--", path).Output()
+	command := exec.CommandContext(ctx, df, "-Pk", "--", path)
+	configureBackgroundCommand(command)
+	output, err := command.Output()
 	if err != nil {
 		return 0, err
 	}
@@ -721,10 +730,14 @@ func (a *NativeAdapter) RunControl(ctx context.Context, action string) (string, 
 		return "", err
 	}
 	allowed := map[string][]string{
-		"status": {"gateway", "status"},
-		"health": {"gateway", "health"},
-		"doctor": {"doctor", "--non-interactive"},
-		"skills": {"skills", "list"},
+		"status":   {"gateway", "status"},
+		"health":   {"gateway", "health"},
+		"doctor":   {"doctor", "--non-interactive"},
+		"skills":   {"skills", "list"},
+		"models":   {"models", "list"},
+		"agents":   {"agents", "list"},
+		"channels": {"channels", "status"},
+		"cron":     {"cron", "list"},
 	}
 	args, ok := allowed[action]
 	if !ok {

@@ -2,12 +2,15 @@
 
 ## 目标与非目标
 
-目标是提供一个免费的、可移植的 Windows 本地 OpenClaw 管理入口。非目标是执行 Cloud Skill、保存 Cloud token、安装第三方插件，或用订阅状态限制本地 OpenClaw。
+目标是提供一个免费的、可移植的 Windows 本地 OpenClaw 管理入口。非目标是执行
+Cloud Skill、保存 Cloud token、安装第三方插件，或用订阅状态限制本地 OpenClaw。
 
 ## 架构
 
 ```text
-Windows UI/CLI
+Windows EXE
+      |
+      +----> WebView2 native window (embedded Manager workspace)
       |
       v
 Manager HTTP API  ---->  OpenClaw discovery / Gateway / backup / diagnostics
@@ -15,9 +18,17 @@ Manager HTTP API  ---->  OpenClaw discovery / Gateway / backup / diagnostics
       +---->  Manager release manifest (product_surface=longhub-manager)
 ```
 
-Cloud API、Cloud Plugin 和 Cloud CLI 不在 Manager 进程依赖图中。这样 Manager 的免费更新、离线本地管理和 Cloud Skill 的收费发布可以分别回滚。
+Windows 入口使用系统 Microsoft Edge WebView2 将带 token 的本地页面加载到应用窗口；
+托盘菜单、重复启动唤醒和窗口聚焦都复用该窗口，不再调用 `ShellExecuteW` 或默认浏览器。
+WebView2 缓存放在 LongHub 专用配置目录，关闭窗口后保留进程和托盘服务，退出菜单才会结束
+Manager。
 
-源码也采用相同边界：本仓库只包含 Manager，使用 Apache-2.0；收费 Cloud API、Cloud Plugin、Cloud CLI 和 Skill 实现保留在其他仓库和发布面，不属于本仓库许可证或签名项目。Go module 路径固定为 `github.com/yypyyd/longhub-manager`，避免 Foundation 审核把公开 Manager 与商业 Cloud 单体仓库视为同一项目。
+Cloud API、Cloud Plugin 和 Cloud CLI 不在 Manager 进程依赖图中。这样 Manager 的免费
+更新、离线本地管理和 Cloud Skill 的收费发布可以分别回滚。
+
+源码也采用相同边界：本仓库只包含 Manager，使用 Apache-2.0；收费 Cloud API、Cloud
+Plugin、Cloud CLI 和 Skill 实现保留在其他仓库和发布面，不属于本仓库许可证或签名项目。
+Go module 路径固定为 `github.com/yypyyd/longhub-manager`。
 
 ## 路由边界
 
@@ -57,6 +68,27 @@ Cloud API、Cloud Plugin 和 Cloud CLI 不在 Manager 进程依赖图中。这�
 SignPath Foundation 有权基于项目声誉、来源控制和条款审核接受或拒绝申请；公开仓库和 Apache-2.0 许可证不保证获批。当前 `0.1.2` 只是供审核的 unsigned candidate，正式 Authenticode、Foundation 项目配置和签名后 Windows E2E 尚未完成，因此不能宣称它是生产签名安装包，也不能激活生产 rollout。Cloud Plugin/CLI 已完成的 Ed25519、Portal 和 OpenClaw E2E 属于独立产品面，不能替代 Manager 门禁。
 
 ## 变更历史
+
+### 2026-08-17 - Skills 结构化展示
+
+Manager 后端将 `openclaw skills list` 的终端表格解析为稳定的状态、名称、说明和来源字段，
+合并 CLI 为适配终端宽度生成的描述续行，再通过本地 API 返回结构化 JSON。Skills 页面使用
+普通表格排版并提供名称、说明、来源搜索以及状态、来源筛选，不再向 WebView 返回或渲染
+ASCII 表格原文。解析器覆盖中英文、emoji、ANSI 控制序列和异常输出，接口测试同时约束原始
+CLI 输出不得出现在 Skills 响应中。
+
+### 2026-08-17 - 隐藏后台 CLI 控制台
+
+刷新总览时会调用 `openclaw`、`npm` 和 Windows 系统探测命令。Windows 子进程统一设置
+`HideWindow` 与 `CREATE_NO_WINDOW`，包括 `.cmd` shim，避免探测过程创建可见的
+`openclaw` 终端窗口；命令输出仍然由 Manager 在后台读取。
+
+### 2026-08-17 - WebView2 桌面窗口
+
+Manager 从“后台 HTTP 服务 + 默认浏览器”入口升级为 Windows 原生 WebView2 窗口，保留
+loopback API、托盘和单实例唤醒；页面改为参考 ClawPanel 信息架构的本地管理工作台，
+不复制其品牌或实现。旧版进程占用默认端口时，新版交互实例自动使用新的回环端口，
+避免升级后再次打开旧浏览器页。
 
 ### 2026-08-17 - Manager/Cloud 拆分
 

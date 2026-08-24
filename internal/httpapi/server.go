@@ -253,13 +253,26 @@ func (s *Server) handleControl(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		writeJSON(w, http.StatusOK, map[string]any{"action": body.Action, "status": status})
-	case "doctor", "skills":
+	case "doctor":
 		output, err := s.adapter.RunControl(r.Context(), body.Action)
 		if err != nil {
 			writeJSON(w, http.StatusUnprocessableEntity, map[string]string{"code": "OPENCLAW_ACTION_FAILED"})
 			return
 		}
 		writeJSON(w, http.StatusOK, map[string]string{"action": body.Action, "output": output})
+	case "skills":
+		output, err := s.adapter.RunControl(r.Context(), body.Action)
+		if err != nil {
+			writeJSON(w, http.StatusUnprocessableEntity, map[string]string{"code": "OPENCLAW_ACTION_FAILED"})
+			return
+		}
+		list := runtime.ParseSkillList(output)
+		writeJSON(w, http.StatusOK, map[string]any{
+			"action":  body.Action,
+			"summary": list.Summary,
+			"skills":  list.Skills,
+			"hint":    list.Hint,
+		})
 	default:
 		writeError(w, http.StatusBadRequest, "UNSUPPORTED_ACTION")
 	}

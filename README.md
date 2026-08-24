@@ -1,9 +1,10 @@
 # LongHub Manager
 
-LongHub Manager is a free, open-source Windows application for discovering and
-managing the user's existing native OpenClaw installation. It provides local
-Gateway lifecycle controls, configuration backup and restore, diagnostics and
-signed Manager updates without requiring a LongHub account or subscription.
+LongHub Manager is a free, open-source Windows desktop application for
+discovering and managing the user's existing native OpenClaw installation. It
+provides a native WebView2 workspace (not a browser redirect), local Gateway
+lifecycle controls, configuration backup and restore, diagnostics and signed
+Manager updates without requiring a LongHub account or subscription.
 
 LongHub Manager does not contain Cloud Skill implementations, Cloud Plugin or
 CLI packages, payment or entitlement logic, cloud execution credentials,
@@ -26,6 +27,8 @@ See the complete [code signing policy](CODE_SIGNING_POLICY.md),
 - Install OpenClaw through the upstream package when the user confirms.
 - Start, stop, restart and inspect the local OpenClaw Gateway.
 - Manage the current user's Gateway startup task.
+- Show the native Skills inventory as a searchable, filterable readiness list
+  with wrapped descriptions and source metadata.
 - Create and restore local OpenClaw configuration backups.
 - Check, download and apply signed LongHub Manager updates on explicit request.
 - Return a fixed HTTP `410 CLOUD_SKILL_MOVED_TO_PLUGIN` response from removed
@@ -41,7 +44,7 @@ go vet ./...
 go build ./cmd/longhub-manager
 
 ./scripts/build-windows-release.ps1 `
-  -Version 0.1.2 `
+  -Version 0.2.1 `
   -CloudApiBaseUrl https://154-9-26-158.sslip.io `
   -AllowUnsigned
 ```
@@ -56,12 +59,17 @@ The installer stages only `LongHubManager.exe` and non-secret
 `release-config.json`. It must not contain an `artifacts` directory, Cloud Skill
 package, plugin archive or execution credential.
 
+The Windows build uses the system Microsoft Edge WebView2 Runtime for the
+embedded Manager window. It does not launch the user's default browser. The
+runtime profile is stored under the current user's LongHub configuration
+directory and is isolated from ordinary browser profiles.
+
 ## 中文说明
 
-LongHub Manager 是免费的开源 Windows 本地 OpenClaw 管理器。它只管理用户
-自己机器上的 OpenClaw、Gateway、备份恢复、诊断和 Manager 更新；本地模型、
-Provider、Channels、Agent、插件、MCP、工作区和第三方 Skill 不受 LongHub 账号或
-Cloud Skill 订阅限制。
+LongHub Manager 是免费的开源 Windows 桌面应用，用于发现和管理用户自己机器上的
+原生 OpenClaw。它提供本地 Gateway 生命周期控制、配置备份恢复、诊断和 Manager
+更新；本地模型、Provider、Channels、Agent、插件、MCP、工作区和第三方 Skill 不
+受 LongHub 账号或 Cloud Skill 订阅限制。
 
 收费 Cloud Skill、Cloud API、Cloud Plugin 和 `longhub-cloud` CLI 是独立产品，
 不包含在本仓库、Manager 进程或安装包内，也不使用本仓库的 Apache-2.0 许可证。

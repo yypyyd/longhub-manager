@@ -15,7 +15,7 @@ func LaunchInstaller(path, mode string) error {
 		return ErrUpdateUnavailable
 	}
 	command := exec.Command(path, "/S", argument)
-	command.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+	command.SysProcAttr = &syscall.SysProcAttr{HideWindow: true, CreationFlags: 0x08000000}
 	if err := command.Start(); err != nil {
 		return ErrUpdateUnavailable
 	}
