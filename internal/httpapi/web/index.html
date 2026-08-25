@@ -13,7 +13,7 @@
       --text: #181b25; --muted: #7c8496; --primary: #665cff; --primary-2: #5148d8;
       --soft: #f0efff; --green: #139b64; --green-soft: #e9f8f1;
       --red: #d94f58; --red-soft: #fff0f1; --amber: #ad7613; --amber-soft: #fff6df;
-      --shadow: 0 9px 28px rgba(31, 34, 48, .055);
+      --shadow: 0 9px 28px rgba(31, 34, 48, .055); --agent-message-max: 1200px;
     }
     :root.dark {
       color-scheme: dark;
@@ -66,6 +66,11 @@
     .dot { width: 7px; height: 7px; border-radius: 50%; background: #b8bdc9; }
     .dot.online { background: var(--green); }
     .content { padding: 29px clamp(20px, 3.5vw, 52px) 54px; max-width: 1450px; margin: auto; }
+    .content.assistant-page-active {
+      max-width: none; height: calc(100vh - 72px); padding-top: 16px; padding-bottom: 16px; overflow: hidden;
+    }
+    .content.assistant-page-active > .head { display: none; }
+    .assistant-view.active { display: flex; height: 100%; min-height: 0; }
     .head { margin-bottom: 22px; }
     .head h1 { margin: 0; font-size: 27px; }
     .head p { margin: 5px 0 0; color: var(--muted); }
@@ -119,6 +124,58 @@
     .data-state { min-height: 130px; }
     .loading, .empty, .error-state { text-align: center; padding: 36px 18px; color: var(--muted); border: 1px dashed var(--line); border-radius: 12px; }
     .error-state { color: var(--red); border-color: color-mix(in srgb, var(--red), transparent 65%); background: var(--red-soft); }
+    .install-workspace { padding: 0; overflow: hidden; }
+    .install-overview { display: flex; align-items: center; gap: 15px; padding: 22px; }
+    .install-state-icon {
+      width: 50px; height: 50px; flex: 0 0 50px; display: grid; place-items: center;
+      border-radius: 15px; background: var(--soft); color: var(--primary); font-size: 21px; font-weight: 800;
+    }
+    .install-state-icon.good { color: var(--green); background: var(--green-soft); }
+    .install-state-icon.bad { color: var(--red); background: var(--red-soft); }
+    .install-overview-copy { min-width: 0; flex: 1; }
+    .install-overview-copy h2 { margin: 5px 0 2px; font-size: 19px; }
+    .install-overview-copy p { margin: 0; color: var(--muted); font-size: 12px; }
+    .install-version-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; padding: 0 22px 20px; }
+    .install-version-card { padding: 14px 15px; border: 1px solid var(--line); border-radius: 11px; background: var(--panel-2); }
+    .install-version-card.notice { border-color: color-mix(in srgb, var(--amber), transparent 48%); background: var(--amber-soft); }
+    .install-version-card.notice strong, .install-version-card.notice small { color: var(--amber); }
+    .install-version-card span, .install-version-card small { display: block; color: var(--muted); font-size: 11px; }
+    .install-version-card strong { display: block; margin: 5px 0 2px; font-size: 17px; }
+    .install-flow { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-block: 1px solid var(--line); background: var(--panel-2); }
+    .install-step { position: relative; display: grid; grid-template-columns: 27px 1fr; gap: 9px; padding: 16px 22px; }
+    .install-step + .install-step { border-left: 1px solid var(--line); }
+    .install-step-index { width: 27px; height: 27px; display: grid; place-items: center; border-radius: 50%; background: var(--panel); border: 1px solid var(--line); color: var(--muted); font-size: 11px; font-weight: 750; }
+    .install-step strong, .install-step small { display: block; }
+    .install-step small { margin-top: 2px; color: var(--muted); font-size: 11px; }
+    .install-step.active .install-step-index { color: #fff; border-color: var(--primary); background: var(--primary); }
+    .install-step.success .install-step-index { color: var(--green); border-color: transparent; background: var(--green-soft); }
+    .install-step.failed .install-step-index { color: var(--red); border-color: transparent; background: var(--red-soft); }
+    .install-actions { display: flex; align-items: center; gap: 9px; padding: 18px 22px; }
+    .install-actions .note { margin-left: 4px; }
+    .install-result { margin: 0 22px 22px; padding: 15px; border: 1px solid var(--line); border-radius: 11px; background: var(--panel-2); }
+    .install-result[hidden] { display: none; }
+    .install-result-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 11px; }
+    .install-checks { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
+    .install-check { display: flex; align-items: center; gap: 7px; min-width: 0; padding: 8px 10px; border-radius: 9px; background: var(--panel); color: var(--muted); font-size: 11px; }
+    .install-check.good { color: var(--green); }
+    .install-check.bad { color: var(--red); }
+    .service-snapshot { margin-bottom: 17px; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--panel-2); }
+    .service-snapshot-main { display: flex; align-items: center; gap: 13px; padding: 17px; }
+    .service-snapshot-icon {
+      width: 42px; height: 42px; flex: 0 0 42px; display: grid; place-items: center;
+      border-radius: 12px; color: var(--muted); background: var(--panel); font-weight: 800;
+    }
+    .service-snapshot-icon.good { color: var(--green); background: var(--green-soft); }
+    .service-snapshot-icon.bad { color: var(--red); background: var(--red-soft); }
+    .service-snapshot-copy { min-width: 0; flex: 1; }
+    .service-snapshot-copy strong, .service-snapshot-copy small { display: block; }
+    .service-snapshot-copy strong { font-size: 16px; }
+    .service-snapshot-copy small { margin-top: 2px; color: var(--muted); }
+    .service-facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-top: 1px solid var(--line); background: var(--panel); }
+    .service-fact { min-width: 0; padding: 13px 16px; }
+    .service-fact + .service-fact { border-left: 1px solid var(--line); }
+    .service-fact span, .service-fact small { display: block; color: var(--muted); font-size: 11px; }
+    .service-fact strong { display: block; margin: 4px 0 1px; font-size: 14px; overflow-wrap: anywhere; }
     .table-wrap { overflow: auto; border: 1px solid var(--line); border-radius: 10px; }
     .inventory-card .table-wrap { max-height: 560px; }
     table { border-collapse: collapse; width: 100%; min-width: 620px; }
@@ -136,22 +193,19 @@
     details.nested > summary { color: var(--primary); cursor: pointer; }
     details.nested > div { margin-top: 8px; }
     .operation { margin-top: 14px; }
-    .assistant-hero {
-      padding: 24px; border-radius: 15px; color: #fff; margin-bottom: 15px;
-      background: radial-gradient(circle at 90% 10%, #b7a0ff55, transparent 32%), linear-gradient(135deg, #5148df, #8a67e8);
+    .agent-settings { position: relative; }
+    .agent-settings > summary {
+      list-style: none; cursor: pointer; padding: 8px 12px; display: flex; gap: 8px;
+      justify-content: space-between; align-items: center; font-weight: 650;
+      background: var(--panel); border: 1px solid var(--line); border-radius: 9px;
     }
-    .assistant-hero h2 { font-size: 22px; margin: 0; }
-    .assistant-hero p { color: #e4e1ff; margin: 7px 0 16px; }
-    .agent-prompts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 9px; }
-    .agent-prompts button { border: 1px solid #ffffff35; border-radius: 10px; background: #ffffff18; color: #fff; padding: 11px; text-align: left; }
-    .agent-prompts button:hover { background: #ffffff27; }
-    .agent-prompts strong, .agent-prompts span { display: block; }
-    .agent-prompts span { color: #e4e1ff; font-size: 11px; margin-top: 2px; }
-    .agent-settings { margin-bottom: 15px; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); }
-    .agent-settings > summary { list-style: none; cursor: pointer; padding: 17px 20px; display: flex; justify-content: space-between; align-items: center; font-weight: 700; }
     .agent-settings > summary::-webkit-details-marker { display: none; }
-    .agent-settings[open] > summary { border-bottom: 1px solid var(--line); }
-    .settings-body { padding: 20px; }
+    .agent-settings[open] > summary { color: var(--primary); border-color: var(--primary); }
+    .agent-settings .settings-body {
+      position: absolute; z-index: 8; top: calc(100% + 9px); right: 0;
+      width: min(920px, calc(100vw - 420px)); padding: 20px;
+      background: var(--panel); border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 18px 50px rgba(31, 34, 48, .16);
+    }
     .form-grid { display: grid; grid-template-columns: 1.2fr .7fr .7fr 1fr; gap: 12px; }
     .manage-grid { display: grid; grid-template-columns: repeat(4, minmax(150px, 1fr)); gap: 10px; align-items: end; }
     .manage-result { margin-top: 12px; }
@@ -163,11 +217,19 @@
       color: var(--text); padding: 9px 11px; outline: none;
     }
     input:focus, select:focus, textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary), transparent 85%); }
-    .chat-card { padding: 0; overflow: hidden; }
+    .chat-card {
+      flex: 1 1 auto; height: 100%; min-height: 0; margin-bottom: 0;
+      padding: 0; overflow: visible; display: flex; flex-direction: column;
+    }
     .chat-head { padding: 16px 20px; border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; gap: 12px; }
     .chat-head h2 { margin: 0; }
-    .messages { min-height: 360px; max-height: 58vh; overflow: auto; padding: 20px; display: flex; flex-direction: column; gap: 13px; background: var(--panel-2); }
-    .message { display: flex; gap: 9px; max-width: min(820px, 88%); }
+    .chat-head-actions { display: flex; align-items: center; gap: 8px; }
+    .messages {
+      min-height: 0; max-height: none; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain;
+      scrollbar-gutter: stable; padding: 20px; display: flex; flex: 1 1 auto;
+      flex-direction: column; gap: 13px; background: var(--panel-2);
+    }
+    .message { display: flex; gap: 9px; width: fit-content; max-width: min(var(--agent-message-max), 88%); }
     .message.user { align-self: flex-end; flex-direction: row-reverse; }
     .avatar { width: 30px; height: 30px; flex: 0 0 30px; border-radius: 9px; display: grid; place-items: center; background: var(--soft); color: var(--primary); font-weight: 800; }
     .message.user .avatar { background: var(--primary); color: #fff; }
@@ -176,6 +238,59 @@
     .message.system { align-self: center; max-width: 94%; }
     .message.system .avatar { display: none; }
     .message.system .bubble { background: var(--amber-soft); color: var(--amber); border-color: transparent; border-radius: 10px; font-size: 12px; }
+    .message.agent-working {
+      display: grid; grid-template-columns: 30px minmax(0, 1fr);
+      width: min(var(--agent-message-max), 100%); max-width: 100%;
+    }
+    .message.agent-working .avatar { animation: agent-avatar-pulse 1.8s ease-in-out infinite; }
+    .message.agent-working .bubble {
+      position: relative; width: 100%; min-width: 0; overflow: hidden; padding: 13px 15px;
+      border-color: color-mix(in srgb, var(--primary), var(--line) 65%);
+      background: color-mix(in srgb, var(--panel), var(--soft) 28%);
+      box-shadow: 0 8px 24px color-mix(in srgb, var(--primary), transparent 92%);
+    }
+    .message.agent-working .bubble::after {
+      content: ""; position: absolute; inset: 0 auto 0 -45%; width: 38%; pointer-events: none;
+      background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--primary), transparent 87%), transparent);
+      animation: agent-shimmer 2.2s ease-in-out infinite;
+    }
+    .agent-working-head { position: relative; z-index: 1; display: flex; align-items: center; gap: 9px; font-weight: 700; color: var(--text); }
+    .agent-activity-orbit {
+      width: 17px; height: 17px; flex: 0 0 17px; display: grid; place-items: center; border-radius: 50%;
+      border: 2px solid color-mix(in srgb, var(--primary), transparent 75%); border-top-color: var(--primary);
+      animation: agent-spin .8s linear infinite;
+    }
+    .agent-working-detail { position: relative; z-index: 1; margin-top: 5px; color: var(--muted); font-size: 12px; }
+    .agent-working-details { position: relative; z-index: 1; margin-top: 9px; }
+    .agent-working-details > summary { width: fit-content; cursor: pointer; color: var(--primary); font-size: 11px; }
+    .agent-live-steps { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 9px; }
+    .agent-live-step { display: flex; align-items: center; gap: 6px; padding: 5px 8px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); background: var(--panel); font-size: 11px; }
+    .agent-live-step-icon {
+      width: 16px; height: 16px; flex: 0 0 16px; display: grid; place-items: center;
+      border-radius: 50%; background: var(--soft); color: var(--primary); font-size: 10px; font-weight: 800;
+    }
+    .agent-live-step.active { color: var(--text); }
+    .agent-live-step.active .agent-live-step-icon { border: 2px solid color-mix(in srgb, var(--primary), transparent 72%); border-top-color: var(--primary); background: transparent; animation: agent-spin .8s linear infinite; }
+    .agent-live-step.success .agent-live-step-icon { background: var(--green-soft); color: var(--green); }
+    .agent-live-step.failed .agent-live-step-icon { background: var(--red-soft); color: var(--red); }
+    .agent-working-meta { position: relative; z-index: 1; display: flex; justify-content: space-between; gap: 18px; margin-top: 10px; color: var(--muted); font-size: 11px; }
+    .agent-progress { position: relative; z-index: 1; height: 3px; margin-top: 10px; overflow: hidden; border-radius: 99px; background: color-mix(in srgb, var(--primary), transparent 88%); }
+    .agent-progress::before {
+      content: ""; position: absolute; inset: 0 auto 0 -32%; width: 32%; border-radius: inherit;
+      background: linear-gradient(90deg, transparent, var(--primary), transparent);
+      animation: agent-progress-slide 1.35s ease-in-out infinite;
+    }
+    @keyframes agent-spin { to { transform: rotate(360deg); } }
+    @keyframes agent-avatar-pulse { 0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 color-mix(in srgb, var(--primary), transparent 72%); } 50% { transform: scale(1.06); box-shadow: 0 0 0 6px transparent; } }
+    @keyframes agent-shimmer { 0% { transform: translateX(0); } 65%, 100% { transform: translateX(390%); } }
+    @keyframes agent-progress-slide { 0% { transform: translateX(0); } 100% { transform: translateX(415%); } }
+    .message.agent-working.complete .avatar, .message.agent-working.complete .bubble::after, .message.agent-working.complete .agent-activity-orbit, .message.agent-working.complete .agent-progress::before { animation: none; }
+    .message.agent-working.complete .agent-activity-orbit { color: var(--green); }
+    .message.agent-working.complete .agent-progress { display: none; }
+    .message.agent-working.failed .bubble { border-color: color-mix(in srgb, var(--red), var(--line) 45%); }
+    .message.agent-working.failed .agent-activity-orbit { border: 0; color: var(--red); }
+    .message .bubble.streaming::after { content: ""; display: inline-block; width: 2px; height: 1em; margin-left: 3px; vertical-align: -.12em; background: var(--primary); animation: agent-cursor .75s steps(1) infinite; }
+    @keyframes agent-cursor { 50% { opacity: 0; } }
     .agent-steps { padding: 0 20px; background: var(--panel-2); }
     .step { display: inline-flex; gap: 6px; align-items: center; margin: 0 6px 8px 0; padding: 5px 9px; border-radius: 8px; background: var(--green-soft); color: var(--green); font-size: 11px; }
     .step.failed { background: var(--red-soft); color: var(--red); }
@@ -184,26 +299,51 @@
     .approval p { margin: 5px 0 11px; color: var(--muted); }
     .approval pre { max-height: 130px; overflow: auto; font: 11px/1.5 Consolas, monospace; white-space: pre-wrap; }
     .composer { padding: 14px 20px 18px; border-top: 1px solid var(--line); background: var(--panel); }
+    .composer-prompts { display: flex; gap: 7px; margin-bottom: 10px; overflow-x: auto; scrollbar-width: thin; }
+    .composer-prompts button {
+      flex: 0 0 auto; border: 1px solid var(--line); border-radius: 999px; padding: 6px 11px;
+      background: var(--panel-2); color: var(--muted); font-size: 11px; white-space: nowrap;
+    }
+    .composer-prompts button:hover { color: var(--primary); border-color: var(--primary); background: var(--soft); }
     .composer-row { display: grid; grid-template-columns: 1fr auto; gap: 9px; align-items: end; }
     .composer textarea { resize: vertical; min-height: 48px; max-height: 150px; }
     .composer small { display: block; color: var(--muted); margin-top: 6px; }
     .badge { display: inline-flex; align-items: center; gap: 5px; padding: 4px 8px; border-radius: 999px; background: var(--soft); color: var(--primary); font-size: 11px; }
     .badge.good { background: var(--green-soft); color: var(--green); }
     .badge.bad { background: var(--red-soft); color: var(--red); }
+    .badge.warn { background: var(--amber-soft); color: var(--amber); }
+    @media (prefers-reduced-motion: reduce) {
+      .message.agent-working .avatar, .message.agent-working .bubble::after, .agent-activity-orbit, .agent-progress::before, .agent-live-step.active .agent-live-step-icon, .message .bubble.streaming::after { animation: none; }
+    }
     @media (max-width: 1050px) {
       .stats, .quick { grid-template-columns: repeat(2, 1fr); }
-      .agent-prompts { grid-template-columns: repeat(2, 1fr); }
       .form-grid { grid-template-columns: 1fr; }
       .manage-grid { grid-template-columns: repeat(2, 1fr); }
+      .install-version-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .install-checks { grid-template-columns: 1fr; }
+      .service-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .service-fact:nth-child(3) { border-left: 0; border-top: 1px solid var(--line); }
+      .service-fact:nth-child(4) { border-top: 1px solid var(--line); }
     }
     @media (max-width: 780px) {
       .sidebar { width: 70px; flex-basis: 70px; padding: 16px 8px; }
       .brand > div:last-child, .label, .nav span, .footer { display: none; }
       .nav button { text-align: center; }
       .content { padding: 22px 15px; }
-      .stats, .cols, .quick, .agent-prompts { grid-template-columns: 1fr; }
+      .stats, .cols, .quick { grid-template-columns: 1fr; }
       .manage-grid { grid-template-columns: 1fr; }
       .message { max-width: 96%; }
+      .agent-settings .settings-body { position: fixed; top: 84px; right: 15px; width: calc(100vw - 100px); max-height: calc(100vh - 105px); overflow: auto; }
+      .chat-head { align-items: flex-start; }
+      .chat-head-actions { flex-wrap: wrap; justify-content: flex-end; }
+      .install-overview { align-items: flex-start; flex-wrap: wrap; }
+      .install-overview .btn { margin-left: 65px; }
+      .install-flow { grid-template-columns: 1fr; }
+      .install-step + .install-step { border-left: 0; border-top: 1px solid var(--line); }
+      .install-actions { align-items: stretch; flex-direction: column; }
+      .install-version-grid { grid-template-columns: 1fr; }
+      .service-facts { grid-template-columns: 1fr; }
+      .service-fact + .service-fact { border-left: 0; border-top: 1px solid var(--line); }
     }
   </style>
 </head>
@@ -269,33 +409,26 @@
         </article>
       </section>
 
-      <section class="view" data-page="assistant">
-        <div class="assistant-hero">
-          <h2>LongHub 管家 Agent</h2>
-          <p>它独立于 OpenClaw Gateway 运行，会先检查再行动；对话和脱敏工具结果会发送到你配置的模型，任何修改都必须由你确认。</p>
-          <div class="agent-prompts">
-            <button data-agent-prompt="全面检查 OpenClaw 安装、Gateway、配置和安全状态，告诉我最需要处理的问题。"><strong>全面体检</strong><span>检查整体健康</span></button>
-            <button data-agent-prompt="检查 Gateway 为什么不能正常运行，先诊断，不要直接修改。"><strong>Gateway 排障</strong><span>定位启动问题</span></button>
-            <button data-agent-prompt="检查模型、Agent 和消息渠道的当前配置，找出异常。"><strong>配置检查</strong><span>模型、Agent 与渠道</span></button>
-            <button data-agent-prompt="运行只读诊断，根据结果给出修复建议；需要修改时先请求我的确认。"><strong>安全修复</strong><span>先诊断后确认</span></button>
-          </div>
-        </div>
-
-        <details class="agent-settings" id="agent-settings">
-          <summary><span>管家模型设置</span><span class="badge" id="agent-config-state">正在检查</span></summary>
-          <div class="settings-body">
-            <div class="form-grid">
-              <div class="field"><label for="agent-base-url">OpenAI 兼容地址</label><input id="agent-base-url" type="url" placeholder="https://api.openai.com/v1"><small>必须使用 HTTPS；本机 127.0.0.1 可使用 HTTP。</small></div>
-              <div class="field"><label for="agent-model">模型</label><input id="agent-model" placeholder="模型 ID"><small>建议选择支持工具调用的模型。</small></div>
-              <div class="field"><label for="agent-protocol">API 协议</label><select id="agent-protocol"><option value="auto">自动识别</option><option value="responses">Responses API</option><option value="chat_completions">Chat Completions</option></select><small>Codex 地址自动使用 Responses。</small></div>
-              <div class="field"><label for="agent-api-key">API Key</label><input id="agent-api-key" type="password" autocomplete="new-password" placeholder="留空则保留现有 Key"><small>Windows 下保存在系统凭据管理器，不写入配置文件。</small></div>
-            </div>
-            <div class="actions" style="margin-top:14px"><button class="btn" id="agent-config-save">保存并测试</button><button class="btn secondary" id="agent-config-test">测试已保存配置</button><button class="btn danger" id="agent-config-delete">清除设置</button></div>
-          </div>
-        </details>
-
+      <section class="view assistant-view" data-page="assistant" id="assistant-view">
         <article class="card chat-card">
-          <div class="chat-head"><div><h2>本机运维对话</h2><span class="note">固定工具白名单 · 写操作逐次确认</span></div><button class="btn secondary" id="agent-new-session">新对话</button></div>
+          <div class="chat-head">
+            <div><h2>本机运维对话</h2><span class="note">固定工具白名单 · 写操作逐次确认</span></div>
+            <div class="chat-head-actions">
+              <details class="agent-settings" id="agent-settings">
+                <summary><span>模型设置</span><span class="badge" id="agent-config-state">正在检查</span></summary>
+                <div class="settings-body">
+                  <div class="form-grid">
+                    <div class="field"><label for="agent-base-url">OpenAI 兼容地址</label><input id="agent-base-url" type="url" placeholder="https://api.openai.com/v1"><small>必须使用 HTTPS；本机 127.0.0.1 可使用 HTTP。</small></div>
+                    <div class="field"><label for="agent-model">模型</label><input id="agent-model" placeholder="模型 ID"><small>建议选择支持工具调用的模型。</small></div>
+                    <div class="field"><label for="agent-protocol">API 协议</label><select id="agent-protocol"><option value="auto">自动识别</option><option value="responses">Responses API</option><option value="chat_completions">Chat Completions</option></select><small>Codex 地址自动使用 Responses。</small></div>
+                    <div class="field"><label for="agent-api-key">API Key</label><input id="agent-api-key" type="password" autocomplete="new-password" placeholder="留空则保留现有 Key"><small>Windows 下保存在系统凭据管理器，不写入配置文件。</small></div>
+                  </div>
+                  <div class="actions" style="margin-top:14px"><button class="btn" id="agent-config-save">保存并测试</button><button class="btn secondary" id="agent-config-test">测试已保存配置</button><button class="btn danger" id="agent-config-delete">清除设置</button></div>
+                </div>
+              </details>
+              <button class="btn secondary" id="agent-new-session">新对话</button>
+            </div>
+          </div>
           <div class="messages" id="agent-messages"></div>
           <div class="agent-steps" id="agent-steps"></div>
           <div class="approval" id="agent-approval" hidden>
@@ -304,6 +437,12 @@
             <div class="actions" style="margin-top:10px"><button class="btn" id="approval-accept">确认执行</button><button class="btn secondary" id="approval-deny">拒绝</button></div>
           </div>
           <div class="composer">
+            <div class="composer-prompts" aria-label="快捷操作">
+              <button data-agent-prompt="全面检查 OpenClaw 安装、Gateway、配置和安全状态，告诉我最需要处理的问题。">全面体检</button>
+              <button data-agent-prompt="检查 Gateway 为什么不能正常运行，先诊断，不要直接修改。">Gateway 排障</button>
+              <button data-agent-prompt="检查模型、Agent 和消息渠道的当前配置，找出异常。">配置检查</button>
+              <button data-agent-prompt="运行只读诊断，根据结果给出修复建议；需要修改时先请求我的确认。">安全修复</button>
+            </div>
             <div class="composer-row"><textarea id="agent-input" maxlength="8192" placeholder="例如：检查为什么 Gateway 启动失败"></textarea><button class="btn" id="agent-send">发送</button></div>
             <small>Enter 发送，Shift + Enter 换行。管家不会索要或显示密钥。</small>
           </div>
@@ -312,21 +451,50 @@
 
       <section class="view" data-page="services">
         <article class="card">
-          <div class="card-head"><div><h2>OpenClaw Gateway</h2><p>生命周期、健康和 Windows 自动启动</p></div></div>
+          <div class="card-head"><div><h2>OpenClaw Gateway</h2><p>生命周期、健康和 Windows 自动启动</p></div><button class="btn secondary" id="services-refresh">刷新状态</button></div>
+          <div class="service-snapshot" id="services-status" aria-live="polite">
+            <div class="service-snapshot-main">
+              <div class="service-snapshot-icon">…</div>
+              <div class="service-snapshot-copy"><strong>正在检查 Gateway</strong><small>正在读取运行状态和 Windows 自动启动设置…</small></div>
+            </div>
+          </div>
           <div class="actions">
             <button class="btn" data-control="start">启动</button><button class="btn secondary" data-control="restart">重启</button><button class="btn danger" data-control="stop">停止</button>
             <button class="btn secondary" data-control="health">健康检查</button><button class="btn secondary" data-control="task-status">启动任务状态</button>
             <button class="btn" data-control="enroll-task">启用自动启动</button><button class="btn danger" data-control="remove-task">取消自动启动</button>
           </div>
-          <div class="operation data-state" id="services-operation"><div class="empty">选择操作以查看结果。</div></div>
+          <div class="operation data-state" id="services-operation" hidden></div>
         </article>
       </section>
 
       <section class="view" data-page="install">
-        <article class="card">
-          <div class="card-head"><div><h2>OpenClaw 安装与更新</h2><p>预检后安装固定审核版本，不接管用户目录</p></div></div>
-          <div class="actions"><button class="btn secondary" id="preflight">运行安装预检</button><button class="btn" id="install">安装审核版本</button></div>
-          <div class="operation data-state" id="install-operation"><div class="empty">先检查 Node.js、npm、目录权限和磁盘空间。</div></div>
+        <article class="card install-workspace">
+          <div class="install-overview">
+            <div class="install-state-icon" id="install-summary-icon">…</div>
+            <div class="install-overview-copy">
+              <span class="badge" id="install-summary-badge">正在检测</span>
+              <h2 id="install-summary-title">正在读取本机安装状态</h2>
+              <p id="install-summary-detail">LongHub 只安装固定审核的官方 npm 包，不接管你的配置和工作区。</p>
+            </div>
+            <button class="btn secondary" id="install-refresh">刷新状态</button>
+          </div>
+          <div class="install-version-grid">
+            <div class="install-version-card"><span>当前安装</span><strong id="install-current-version">检测中</strong><small id="install-current-note">正在查找 OpenClaw</small></div>
+            <div class="install-version-card"><span>LongHub 已审核</span><strong id="install-target-version">读取中</strong><small id="install-target-note">可一键安全安装</small></div>
+            <div class="install-version-card" id="install-latest-card"><span>npm 官方最新</span><strong id="install-latest-version">检查中</strong><small id="install-latest-note">正在查询官方源</small></div>
+            <div class="install-version-card"><span>Node.js 环境</span><strong id="install-node-version">检测中</strong><small id="install-node-note">安装前必须兼容</small></div>
+          </div>
+          <div class="install-flow" aria-label="安装流程">
+            <div class="install-step active" id="install-step-1"><span class="install-step-index">1</span><div><strong>检查安装条件</strong><small>Node.js、npm、权限与磁盘空间</small></div></div>
+            <div class="install-step" id="install-step-2"><span class="install-step-index">2</span><div><strong>确认安装方案</strong><small>仅使用固定审核版本</small></div></div>
+            <div class="install-step" id="install-step-3"><span class="install-step-index">3</span><div><strong>安装并验证</strong><small>完成后重新读取实际版本</small></div></div>
+          </div>
+          <div class="install-actions">
+            <button class="btn secondary" id="preflight">检查安装条件</button>
+            <button class="btn" id="install" disabled>安装审核版本</button>
+            <span class="note" id="install-action-note">先通过无副作用的安装预检。</span>
+          </div>
+          <div class="install-result" id="install-operation" hidden></div>
         </article>
       </section>
 
@@ -374,7 +542,7 @@
     overview: ["首页", "OpenClaw 状态与 LongHub 维护入口"],
     assistant: ["管家 Agent", "独立于 Gateway 的诊断与受控修复"],
     services: ["服务管理", "Gateway 生命周期和 Windows 自动启动"],
-    install: ["OpenClaw 安装与更新", "安装和维护外部 OpenClaw 运行核心"],
+    install: ["OpenClaw 安装", "检查环境并安装固定审核版本"],
     diagnostics: ["检查与修复", "只读诊断与可恢复修复"],
     backups: ["配置备份", "创建、校验并恢复配置快照"],
     settings: ["设置", "Manager 本地界面选项"],
@@ -407,11 +575,19 @@
     MANAGER_AGENT_TURN_FAILED: "管家模型调用失败。请检查兼容地址、模型、API Key 和网络。",
     MANAGER_AGENT_APPROVAL_FAILED: "确认操作失败或已经过期。",
     OPENCLAW_INVENTORY_FAILED: "OpenClaw 未返回可用的结构化数据。",
+    OPENCLAW_INSTALL_UNAVAILABLE: "当前环境暂时无法生成安装方案。",
+    OPENCLAW_INSTALL_PREFLIGHT_FAILED: "安装条件未通过，请处理失败项目后重试。",
+    OPENCLAW_INSTALL_FAILED: "OpenClaw 安装失败。",
     OPENCLAW_REPAIR_VALIDATION_FAILED: "修复后的配置未通过验证，已自动恢复。",
     OPENCLAW_REPAIR_ROLLBACK_FAILED: "修复失败且自动恢复未完成，请立即使用配置备份。",
     OPENCLAW_MANAGEMENT_FAILED: "OpenClaw 管理操作失败，未确认成功修改。",
     OPENCLAW_CONFIG_MUTATION_VALIDATION_FAILED: "修改后的配置未通过验证，已自动恢复。",
     OPENCLAW_CONFIG_MUTATION_ROLLBACK_FAILED: "配置修改失败且自动恢复未完成，请立即使用配置备份。",
+    GATEWAY_STATUS_UNAVAILABLE: "暂时无法读取 Gateway 状态，请稍后重试。",
+    GATEWAY_ACTION_FAILED: "Gateway 操作未完成，请刷新状态后重试。",
+    OPENCLAW_NOT_INSTALLED: "尚未安装 OpenClaw。",
+    SCHEDULED_TASK_OPERATION_FAILED: "Windows 自动启动操作失败，请刷新状态后重试。",
+    SCHEDULED_TASK_LIFECYCLE_UNSUPPORTED: "当前系统不支持由 LongHub 管理自动启动。",
     CONFIG_BACKUP_NOT_CONFIGURED: "配置备份在当前环境不可用。",
     NATIVE_CONFIG_NOT_FOUND: "尚未找到 OpenClaw 配置文件。",
     OPENCLAW_DASHBOARD_FAILED: "无法打开 OpenClaw，请先确认 OpenClaw 已安装且 Gateway 配置有效。",
@@ -423,6 +599,17 @@
   let agentSession = "";
   let pendingApproval = null;
   let agentBusy = false;
+  let agentActivity = null;
+  let installBusy = false;
+  let installPreflightReady = false;
+  let installRuntimeStatus = null;
+  let installTargetPackage = "";
+  let installReviewedVersion = "";
+  let installLatestVersion = "";
+  let installLatestCheckFailed = false;
+  let servicesGatewayStatus = null;
+  let servicesTaskStatus = null;
+  let servicesBusy = false;
 
   async function call(path, options = {}) {
     const response = await fetch(path, { ...options, headers: { ...headers, ...(options.headers || {}) } });
@@ -435,6 +622,19 @@
       throw error;
     }
     return body;
+  }
+
+  async function callWithTimeout(path, options, timeoutMs, timeoutMessage) {
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      return await call(path, { ...options, signal: controller.signal });
+    } catch (error) {
+      if (error && error.name === "AbortError") throw new Error(timeoutMessage);
+      throw error;
+    } finally {
+      window.clearTimeout(timeout);
+    }
   }
 
   function text(id, value) {
@@ -587,10 +787,13 @@
     text("crumb", pages[page][0]);
     text("title", pages[page][0]);
     text("subtitle", pages[page][1]);
+    document.querySelector(".content").classList.toggle("assistant-page-active", page === "assistant");
     const view = document.querySelector('[data-page="' + page + '"]');
     if (view) view.querySelectorAll("[data-auto-kind]").forEach(card => loadInventory(card.dataset.autoKind));
     if (page === "backups") loadBackups();
     if (page === "assistant") loadAgentConfig();
+    if (page === "services") loadServicesWorkspace();
+    if (page === "install") loadInstallWorkspace();
   }
 
   async function loadInventory(kind) {
@@ -617,6 +820,107 @@
     text("last-check", new Date().toLocaleTimeString());
     const statusIcon = document.getElementById("status-icon");
     if (statusIcon) statusIcon.classList.toggle("offline", !running);
+  }
+
+  function serviceGatewayView(status) {
+    if (!status) return { title: "Gateway 状态不可用", detail: "暂时无法读取运行状态，请刷新重试。", icon: "!", state: "bad" };
+    if (!status.installed) return { title: "尚未安装 OpenClaw", detail: status.message || "请先完成 OpenClaw 安装。", icon: "–", state: "" };
+    if (status.running && status.managed) return { title: "Gateway 正在运行", detail: status.message || "由 LongHub 管理，可在这里安全停止或重启。", icon: "✓", state: status.health === "unhealthy" ? "bad" : "good" };
+    if (status.running) return { title: "Gateway 正在外部运行", detail: status.message || "该进程不由 LongHub 启动，因此不会在这里强制停止。", icon: "↗", state: "" };
+    if (status.state === "unknown") return { title: "Gateway 状态无法确认", detail: status.message || "请刷新或运行健康检查。", icon: "!", state: "bad" };
+    return { title: "Gateway 已停止", detail: status.message || "环境已就绪，可以启动 Gateway。", icon: "■", state: "" };
+  }
+
+  function serviceHealthLabel(status) {
+    if (!status || !status.running) return "未运行";
+    if (status.health === "healthy") return "健康";
+    if (status.health === "unhealthy") return "异常";
+    return "待确认";
+  }
+
+  function serviceOwnershipLabel(status) {
+    if (!status || !status.running) return "无运行进程";
+    return status.managed ? "LongHub 管理" : "外部启动";
+  }
+
+  function serviceTaskLabel(status) {
+    if (!status) return "读取失败";
+    if (!status.supported || status.state === "unsupported") return "当前系统不支持";
+    if (status.state === "conflict") return "检测到任务冲突";
+    if (status.state === "unavailable") return "状态不可用";
+    return status.enrolled ? "已启用" : "未启用";
+  }
+
+  function serviceFact(label, value, detail) {
+    const node = el("div", "service-fact", "");
+    node.append(el("span", "", label), el("strong", "", value), el("small", "", detail));
+    return node;
+  }
+
+  function renderServicesStatus(gatewayError = null, taskError = null) {
+    const target = document.getElementById("services-status");
+    const view = serviceGatewayView(servicesGatewayStatus);
+    const main = el("div", "service-snapshot-main", "");
+    main.append(
+      el("div", "service-snapshot-icon" + (view.state ? " " + view.state : ""), view.icon),
+      el("div", "service-snapshot-copy", "")
+    );
+    main.lastElementChild.append(
+      el("strong", "", view.title),
+      el("small", "", gatewayError ? gatewayError.message : view.detail)
+    );
+    const facts = el("div", "service-facts", "");
+    facts.append(
+      serviceFact("OpenClaw 版本", servicesGatewayStatus && servicesGatewayStatus.version || "--", servicesGatewayStatus && servicesGatewayStatus.installed ? "本机原生安装" : "等待发现"),
+      serviceFact("健康状态", serviceHealthLabel(servicesGatewayStatus), servicesGatewayStatus && servicesGatewayStatus.running ? "最近一次检查结果" : "启动后自动检查"),
+      serviceFact("运行归属", serviceOwnershipLabel(servicesGatewayStatus), servicesGatewayStatus && servicesGatewayStatus.managed ? "可安全停止和重启" : "不会强制接管外部进程"),
+      serviceFact("Windows 自动启动", serviceTaskLabel(servicesTaskStatus), taskError ? taskError.message : "登录后启动 Gateway")
+    );
+    target.replaceChildren(main, facts);
+  }
+
+  function syncServiceControls() {
+    const gateway = servicesGatewayStatus;
+    const task = servicesTaskStatus;
+    document.getElementById("services-refresh").disabled = servicesBusy;
+    document.querySelectorAll('[data-page="services"] [data-control]').forEach(button => {
+      const action = button.dataset.control;
+      let disabled = servicesBusy;
+      if (action === "start") disabled ||= !gateway || !gateway.installed || gateway.running;
+      if (action === "stop" || action === "restart") disabled ||= !gateway || !gateway.running || !gateway.managed;
+      if (action === "health") disabled ||= !gateway || !gateway.installed;
+      if (action === "enroll-task") disabled ||= !gateway || !gateway.installed || !task || !task.supported || task.enrolled || task.state === "conflict";
+      if (action === "remove-task") disabled ||= !task || !task.supported || !task.enrolled;
+      button.disabled = disabled;
+    });
+  }
+
+  async function loadServicesWorkspace(clearOperation = true) {
+    servicesBusy = true;
+    servicesGatewayStatus = null;
+    servicesTaskStatus = null;
+    syncServiceControls();
+    const target = document.getElementById("services-status");
+    target.replaceChildren(el("div", "loading", "正在读取 Gateway 和 Windows 自动启动状态…"));
+    if (clearOperation) document.getElementById("services-operation").hidden = true;
+    const [gatewayResult, taskResult] = await Promise.allSettled([
+      call("/api/v1/runtime/control", {
+        method: "POST", headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action: "status", confirm: false })
+      }),
+      call("/api/v1/runtime/control", {
+        method: "POST", headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action: "task-status", confirm: false })
+      })
+    ]);
+    if (gatewayResult.status === "fulfilled") servicesGatewayStatus = gatewayResult.value.status || gatewayResult.value;
+    if (taskResult.status === "fulfilled") servicesTaskStatus = taskResult.value.status || taskResult.value;
+    renderServicesStatus(
+      gatewayResult.status === "rejected" ? gatewayResult.reason : null,
+      taskResult.status === "rejected" ? taskResult.reason : null
+    );
+    servicesBusy = false;
+    syncServiceControls();
   }
 
   async function refreshOverview() {
@@ -664,25 +968,33 @@
     if (confirmedActions.includes(action) && !confirm(prompts[action])) return;
     const target = operationTarget();
     if (button) button.disabled = true;
-    setLoading(target, "正在执行…");
+    document.getElementById(target).hidden = false;
+    setLoading(target, action === "dashboard" ? "正在创建 OpenClaw 命令行窗口…" : "正在执行…");
     try {
-      const response = await call("/api/v1/runtime/control", {
+      const request = {
         method: "POST", headers: { "content-type": "application/json" },
         body: JSON.stringify({ action, confirm: confirmedActions.includes(action) })
-      });
+      };
+      const response = action === "dashboard"
+        ? await callWithTimeout("/api/v1/runtime/control", request, 12000, "打开 OpenClaw 超时，请重试；如果命令行窗口已经出现，可直接在窗口中继续。")
+        : await call("/api/v1/runtime/control", request);
       if (action === "dashboard") {
-        document.getElementById(target).replaceChildren(el("div", "empty", "已交给 OpenClaw 打开自带管理界面。"));
+        document.getElementById(target).replaceChildren(el("div", "empty", "OpenClaw 命令行窗口已创建，正在由 OpenClaw 打开自带管理界面。"));
       } else {
         renderInto(target, response);
       }
       if (["status", "health", "start", "stop", "restart"].includes(action)) applyStatus(response);
       if (["start", "stop", "restart", "repair"].includes(action)) await refreshOverview();
+      if (currentPage === "services" && ["status", "health", "task-status", "start", "stop", "restart", "enroll-task", "remove-task"].includes(action)) {
+        await loadServicesWorkspace(false);
+      }
       if (action === "repair") loadInventory("diagnostics");
     } catch (error) {
       if (error.body && Object.keys(error.body).length > 1) renderInto(target, error.body);
       else renderError(target, error);
     } finally {
       if (button) button.disabled = false;
+      if (currentPage === "services") syncServiceControls();
     }
   }
 
@@ -692,9 +1004,141 @@
     row.append(el("div", "avatar", role === "user" ? "你" : "L"), el("div", "bubble", content));
     messages.append(row);
     messages.scrollTop = messages.scrollHeight;
+    return row;
+  }
+
+  function formatAgentElapsed(elapsed) {
+    if (elapsed < 60) return "已用时 " + elapsed + " 秒";
+    const minutes = Math.floor(elapsed / 60);
+    return "已用时 " + minutes + " 分 " + (elapsed % 60) + " 秒";
+  }
+
+  function updateAgentActivity() {
+    if (!agentActivity) return;
+    const elapsed = Math.max(0, Math.floor((Date.now() - agentActivity.startedAt) / 1000));
+    agentActivity.elapsed.textContent = formatAgentElapsed(elapsed);
+  }
+
+  function startAgentActivity(initialLabel = "已收到请求，正在准备检查…") {
+    stopAgentActivity();
+    const messages = document.getElementById("agent-messages");
+    const row = el("div", "message assistant agent-working", "");
+    row.setAttribute("role", "status");
+    row.setAttribute("aria-live", "polite");
+    const avatar = el("div", "avatar", "L");
+    const bubble = el("div", "bubble", "");
+    const head = el("div", "agent-working-head", "");
+    const orbit = el("span", "agent-activity-orbit", "");
+    orbit.setAttribute("aria-hidden", "true");
+    head.append(orbit, el("span", "", "管家正在工作"));
+    const detail = el("div", "agent-working-detail", initialLabel);
+    const details = el("details", "agent-working-details", "");
+    const detailsSummary = el("summary", "", "查看执行过程 · 0 步");
+    const liveSteps = el("div", "agent-live-steps", "");
+    details.append(detailsSummary, liveSteps);
+    const meta = el("div", "agent-working-meta", "");
+    const elapsed = el("span", "", "已用时 0 秒");
+    const metaLabel = el("span", "", "实时执行中");
+    meta.append(metaLabel, elapsed);
+    bubble.append(head, detail, details, meta, el("div", "agent-progress", ""));
+    row.append(avatar, bubble);
+    messages.append(row);
+    messages.scrollTop = messages.scrollHeight;
+    agentActivity = {
+      row, headLabel: head.lastElementChild, orbit, detail, details, detailsSummary, liveSteps, metaLabel, elapsed,
+      startedAt: Date.now(), timer: 0, activeStep: null, stepSequence: 0,
+      failedSteps: 0, replyRow: null, replyBubble: null
+    };
+    agentActivity.timer = window.setInterval(updateAgentActivity, 1000);
+    updateAgentActivity();
+  }
+
+  function setAgentActivityStatus(message) {
+    if (agentActivity && message) agentActivity.detail.textContent = message;
+  }
+
+  function finishActiveAgentStep(success = true) {
+    if (!agentActivity || !agentActivity.activeStep) return;
+    const step = agentActivity.activeStep;
+    step.className = "agent-live-step " + (success ? "success" : "failed");
+    step.firstElementChild.textContent = success ? "✓" : "×";
+    if (!success) agentActivity.failedSteps += 1;
+    agentActivity.activeStep = null;
+    updateAgentDetailsSummary();
+  }
+
+  function updateAgentDetailsSummary() {
+    if (!agentActivity) return;
+    let label = "查看执行过程 · " + agentActivity.stepSequence + " 步";
+    if (agentActivity.failedSteps) label += " · " + agentActivity.failedSteps + " 项失败";
+    agentActivity.detailsSummary.textContent = label;
+  }
+
+  function addAgentLiveStep(label, state = "active") {
+    if (!agentActivity) return null;
+    if (state === "active") finishActiveAgentStep(true);
+    const step = el("div", "agent-live-step " + state, "");
+    const icon = el("span", "agent-live-step-icon", state === "success" ? "✓" : state === "failed" ? "×" : "");
+    step.append(icon, el("span", "", label || "执行检查"));
+    agentActivity.liveSteps.append(step);
+    if (state === "active") agentActivity.activeStep = step;
+    agentActivity.stepSequence += 1;
+    if (state === "failed") agentActivity.failedSteps += 1;
+    updateAgentDetailsSummary();
+    document.getElementById("agent-messages").scrollTop = document.getElementById("agent-messages").scrollHeight;
+    return step;
+  }
+
+  function startAgentReply() {
+    if (!agentActivity || agentActivity.replyBubble) return;
+    const messages = document.getElementById("agent-messages");
+    const row = el("div", "message assistant", "");
+    const bubble = el("div", "bubble streaming", "");
+    row.append(el("div", "avatar", "L"), bubble);
+    messages.append(row);
+    agentActivity.replyRow = row;
+    agentActivity.replyBubble = bubble;
+    messages.scrollTop = messages.scrollHeight;
+  }
+
+  function appendAgentReplyDelta(delta) {
+    if (!agentActivity) return;
+    startAgentReply();
+    agentActivity.replyBubble.textContent += delta || "";
+    const messages = document.getElementById("agent-messages");
+    messages.scrollTop = messages.scrollHeight;
+  }
+
+  function completeAgentActivity(success, message) {
+    if (!agentActivity) return;
+    const activity = agentActivity;
+    finishActiveAgentStep(success);
+    window.clearInterval(activity.timer);
+    const elapsed = Math.max(0, Math.floor((Date.now() - activity.startedAt) / 1000));
+    activity.row.classList.add("complete");
+    if (!success) activity.row.classList.add("failed");
+    activity.headLabel.textContent = success ? "执行过程" : "执行中断";
+    activity.orbit.textContent = success ? "✓" : "×";
+    activity.orbit.style.border = "0";
+    activity.orbit.style.animation = "none";
+    activity.detail.textContent = message || (success ? "已完成分析" : "未完成请求");
+    activity.metaLabel.textContent = success ? "已完成" : "已中断";
+    activity.elapsed.textContent = formatAgentElapsed(elapsed);
+    updateAgentDetailsSummary();
+    if (activity.replyBubble) activity.replyBubble.classList.remove("streaming");
+    agentActivity = null;
+  }
+
+  function stopAgentActivity() {
+    if (!agentActivity) return;
+    window.clearInterval(agentActivity.timer);
+    if (agentActivity.replyRow) agentActivity.replyRow.remove();
+    agentActivity.row.remove();
+    agentActivity = null;
   }
 
   function resetAgentMessages() {
+    stopAgentActivity();
     const messages = document.getElementById("agent-messages");
     messages.replaceChildren();
     appendMessage("assistant", "你好，我是 LongHub 管家。我可以检查 OpenClaw、解释问题，并通过固定工具执行经过你确认的修复。");
@@ -704,8 +1148,11 @@
 
   function setAgentBusy(busy) {
     agentBusy = busy;
-    document.getElementById("agent-send").disabled = busy || !agentConfigured || Boolean(pendingApproval);
+    const sendButton = document.getElementById("agent-send");
+    sendButton.disabled = busy || !agentConfigured || Boolean(pendingApproval);
+    sendButton.textContent = busy ? "处理中…" : "发送";
     document.getElementById("agent-input").disabled = busy || !agentConfigured || Boolean(pendingApproval);
+    document.getElementById("agent-new-session").disabled = busy || Boolean(pendingApproval);
     document.querySelectorAll("[data-agent-prompt]").forEach(button => button.disabled = busy || !agentConfigured || Boolean(pendingApproval));
   }
 
@@ -811,22 +1258,107 @@
     setAgentBusy(false);
   }
 
-  function hideApproval() {
+  function hideApproval(updateControls = true) {
     pendingApproval = null;
     document.getElementById("agent-approval").hidden = true;
-    setAgentBusy(false);
+    if (updateControls) setAgentBusy(false);
   }
 
-  function handleAgentResponse(response) {
+  function handleAgentResponse(response, streamed = false) {
     if (response.session_id) agentSession = response.session_id;
-    renderAgentSteps(response.steps);
+    if (!streamed) renderAgentSteps(response.steps);
     if (response.approval) {
       showApproval(response.approval);
       appendMessage("system", "管家请求执行一项会修改本机状态的操作，请确认或拒绝。");
       return;
     }
     hideApproval();
-    if (response.reply) appendMessage("assistant", response.reply);
+    if (!streamed && response.reply) appendMessage("assistant", response.reply);
+  }
+
+  async function streamAgentRequest(path, payload, onEvent) {
+    const response = await fetch(path, {
+      method: "POST",
+      headers: { ...headers, accept: "text/event-stream", "content-type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      const code = body.code || "HTTP_" + response.status;
+      throw new Error(body.message || errorLabels[code] || code);
+    }
+    if (!response.body) throw new Error("当前 WebView 不支持流式对话。");
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    let doneReceived = false;
+    const consume = block => {
+      const data = block.split("\n").filter(line => line.startsWith("data:")).map(line => line.slice(5).trimStart()).join("\n");
+      if (!data) return;
+      const event = JSON.parse(data);
+      if (event.type === "error") {
+        throw new Error(event.message || errorLabels[event.code] || event.code || "管家执行失败。");
+      }
+      onEvent(event);
+      if (event.type === "done") doneReceived = true;
+    };
+    while (true) {
+      const result = await reader.read();
+      buffer += decoder.decode(result.value || new Uint8Array(), { stream: !result.done }).replaceAll("\r\n", "\n");
+      let boundary;
+      while ((boundary = buffer.indexOf("\n\n")) >= 0) {
+        const block = buffer.slice(0, boundary);
+        buffer = buffer.slice(boundary + 2);
+        consume(block);
+      }
+      if (result.done) break;
+    }
+    if (buffer.trim()) consume(buffer);
+    if (!doneReceived) throw new Error("管家事件流提前中断，请重试。");
+  }
+
+  function handleAgentStreamEvent(event) {
+    switch (event.type) {
+      case "turn_started":
+        setAgentActivityStatus("正在理解你的请求…");
+        break;
+      case "model_started":
+        setAgentActivityStatus(event.message || "正在进行模型分析…");
+        addAgentLiveStep("分析问题" + (event.round > 1 ? " · 第 " + event.round + " 轮" : ""));
+        break;
+      case "model_completed":
+        finishActiveAgentStep(true);
+        setAgentActivityStatus(event.message || "已生成检查计划。");
+        break;
+      case "tool_started":
+        setAgentActivityStatus("正在执行：" + (event.summary || event.tool));
+        addAgentLiveStep(event.summary || event.tool || "执行工具");
+        break;
+      case "tool_completed":
+        if (agentActivity && agentActivity.activeStep) finishActiveAgentStep(event.success !== false);
+        else addAgentLiveStep(event.summary || event.tool || "工具执行", event.success === false ? "failed" : "success");
+        setAgentActivityStatus(event.success === false ? "这项操作未成功，正在整理结果…" : "工具已返回，正在继续分析…");
+        break;
+      case "approval_required":
+        finishActiveAgentStep(true);
+        setAgentActivityStatus("检查完成，下一步需要你确认。");
+        break;
+      case "answer_started":
+        finishActiveAgentStep(true);
+        setAgentActivityStatus(event.message || "正在生成答复…");
+        startAgentReply();
+        break;
+      case "reply_delta":
+        appendAgentReplyDelta(event.delta);
+        break;
+      case "done": {
+        const response = event.response || {};
+        const needsApproval = Boolean(response.approval);
+        completeAgentActivity(true, needsApproval ? "已完成检查，等待你确认下一步" : "已完成检查并生成答复");
+        handleAgentResponse(response, true);
+        break;
+      }
+    }
   }
 
   async function sendAgent(message) {
@@ -840,13 +1372,11 @@
     appendMessage("user", message);
     document.getElementById("agent-input").value = "";
     setAgentBusy(true);
+    startAgentActivity("正在连接管家引擎…");
     try {
-      const response = await call("/api/v1/agent/turn", {
-        method: "POST", headers: { "content-type": "application/json" },
-        body: JSON.stringify({ session_id: agentSession, message })
-      });
-      handleAgentResponse(response);
+      await streamAgentRequest("/api/v1/agent/turn/stream", { session_id: agentSession, message }, handleAgentStreamEvent);
     } catch (error) {
+      completeAgentActivity(false, error.message);
       appendMessage("system", error.message);
     } finally {
       setAgentBusy(false);
@@ -859,19 +1389,19 @@
     setAgentBusy(true);
     document.getElementById("approval-accept").disabled = true;
     document.getElementById("approval-deny").disabled = true;
+    startAgentActivity(approved ? "已确认，正在准备执行…" : "正在记录你的拒绝…");
     try {
-      const response = await call("/api/v1/agent/approval", {
-        method: "POST", headers: { "content-type": "application/json" },
-        body: JSON.stringify({ session_id: agentSession, approval_id: approval.id, approved })
-      });
-      hideApproval();
+      hideApproval(false);
       appendMessage("system", approved ? "已确认执行。" : "已拒绝执行。");
-      handleAgentResponse(response);
+      await streamAgentRequest("/api/v1/agent/approval/stream", {
+        session_id: agentSession, approval_id: approval.id, approved
+      }, handleAgentStreamEvent);
       if (approved) {
         refreshOverview();
         if (currentPage === "diagnostics") loadInventory("diagnostics");
       }
     } catch (error) {
+      completeAgentActivity(false, error.message);
       appendMessage("system", error.message);
     } finally {
       document.getElementById("approval-accept").disabled = false;
@@ -951,21 +1481,318 @@
     }
   }
 
+  function setInstallStep(index, state, detail) {
+    const step = document.getElementById("install-step-" + index);
+    if (!step) return;
+    step.className = "install-step" + (state ? " " + state : "");
+    step.querySelector(".install-step-index").textContent = state === "success" ? "✓" : state === "failed" ? "×" : String(index);
+    if (detail) step.querySelector("small").textContent = detail;
+  }
+
+  function resetInstallFlow() {
+    setInstallStep(1, "active", "Node.js、npm、权限与磁盘空间");
+    setInstallStep(2, "", "仅使用固定审核版本");
+    setInstallStep(3, "", "完成后重新读取实际版本");
+  }
+
+  function installVersion(packageName) {
+    return String(packageName || "").replace(/^openclaw@/, "") || "暂不可用";
+  }
+
+  function parseComparableVersion(value) {
+    const match = /^(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?(?:\+[0-9A-Za-z.-]+)?$/.exec(String(value || "").trim());
+    if (!match) return null;
+    return { core: match.slice(1, 4).map(Number), prerelease: match[4] ? match[4].split(".") : [] };
+  }
+
+  function compareOpenClawVersions(leftValue, rightValue) {
+    const left = parseComparableVersion(leftValue);
+    const right = parseComparableVersion(rightValue);
+    if (!left || !right) return null;
+    for (let index = 0; index < 3; index += 1) {
+      if (left.core[index] !== right.core[index]) return left.core[index] > right.core[index] ? 1 : -1;
+    }
+    if (!left.prerelease.length && !right.prerelease.length) return 0;
+    if (!left.prerelease.length) return 1;
+    if (!right.prerelease.length) return -1;
+    const count = Math.max(left.prerelease.length, right.prerelease.length);
+    for (let index = 0; index < count; index += 1) {
+      if (left.prerelease[index] === undefined) return -1;
+      if (right.prerelease[index] === undefined) return 1;
+      if (left.prerelease[index] === right.prerelease[index]) continue;
+      const leftNumeric = /^\d+$/.test(left.prerelease[index]);
+      const rightNumeric = /^\d+$/.test(right.prerelease[index]);
+      if (leftNumeric && rightNumeric) return Number(left.prerelease[index]) > Number(right.prerelease[index]) ? 1 : -1;
+      if (leftNumeric !== rightNumeric) return leftNumeric ? -1 : 1;
+      return left.prerelease[index] > right.prerelease[index] ? 1 : -1;
+    }
+    return 0;
+  }
+
+  function reviewedInstallVersion() {
+    return installReviewedVersion || installVersion(installTargetPackage);
+  }
+
+  function installActionState() {
+    const status = installRuntimeStatus;
+    const targetVersion = reviewedInstallVersion();
+    if (!status || targetVersion === "暂不可用" || status.state === "unsupported") {
+      return { kind: "unavailable", allowed: false, preflight: false, label: "暂不可安装" };
+    }
+    if (status.state === "uninstalled") {
+      return { kind: "install", allowed: true, preflight: true, label: "安装 " + targetVersion };
+    }
+    const comparison = compareOpenClawVersions(status.version, targetVersion);
+    if (comparison === null) return { kind: "unavailable", allowed: false, preflight: false, label: "版本无法比较" };
+    if (comparison < 0) return { kind: "upgrade", allowed: true, preflight: true, label: "升级到 " + targetVersion };
+    if (comparison === 0) return { kind: "current", allowed: false, preflight: false, label: "已是最新审核版本" };
+    return { kind: "newer", allowed: false, preflight: false, label: "当前版本高于审核版本" };
+  }
+
+  function syncInstallActions(updateNote) {
+    const action = installActionState();
+    text("install", action.label);
+    document.getElementById("install-refresh").disabled = installBusy;
+    document.getElementById("preflight").disabled = installBusy || !action.preflight;
+    document.getElementById("install").disabled = installBusy || !installPreflightReady || !action.allowed;
+    if (updateNote) {
+      if (action.kind === "install") text("install-action-note", "先检查安装条件，检查通过后确认安装。");
+      else if (action.kind === "upgrade") text("install-action-note", "先检查安装条件，检查通过后确认升级。");
+      else if (action.kind === "current") text("install-action-note", "当前没有需要执行的审核版本升级。");
+      else if (action.kind === "newer") text("install-action-note", "不会自动降级到较低的审核版本。");
+      else text("install-action-note", "当前状态不允许安装，请刷新后重试。");
+    }
+    return action;
+  }
+
+  function setInstallBusy(busy) {
+    installBusy = busy;
+    syncInstallActions(false);
+  }
+
+  function renderLatestVersionCard() {
+    const card = document.getElementById("install-latest-card");
+    card.classList.remove("notice");
+    if (installLatestCheckFailed) {
+      text("install-latest-version", "检查失败");
+      text("install-latest-note", "点击“刷新状态”重试");
+      return;
+    }
+    if (!installLatestVersion) {
+      text("install-latest-version", "检查中");
+      text("install-latest-note", "正在查询官方源");
+      return;
+    }
+    text("install-latest-version", installLatestVersion);
+    const comparison = compareOpenClawVersions(installLatestVersion, reviewedInstallVersion());
+    if (comparison !== null && comparison > 0) {
+      card.classList.add("notice");
+      text("install-latest-note", "发现新版 · 等待 LongHub 审核");
+    } else if (comparison === 0) {
+      text("install-latest-note", "与 LongHub 审核版本一致");
+    } else {
+      text("install-latest-note", comparison === null ? "版本状态暂不可比较" : "官方源当前返回此版本");
+    }
+  }
+
+  function updateInstallSummary() {
+    const status = installRuntimeStatus;
+    const icon = document.getElementById("install-summary-icon");
+    icon.className = "install-state-icon";
+    if (!status) {
+      icon.textContent = "!";
+      icon.classList.add("bad");
+      text("install-summary-badge", "状态不可用");
+      text("install-summary-title", "无法读取本机 OpenClaw 状态");
+      text("install-summary-detail", "请确认本地服务正常后刷新。");
+      syncInstallActions(true);
+      return;
+    }
+    const installed = status.state !== "uninstalled";
+    const unsupported = status.state === "unsupported";
+    const action = installActionState();
+    const upstreamPending = compareOpenClawVersions(installLatestVersion, reviewedInstallVersion()) > 0;
+    icon.textContent = unsupported ? "!" : action.kind === "upgrade" || upstreamPending ? "↑" : installed ? "✓" : "↓";
+    if (installed && !unsupported && !upstreamPending && action.kind !== "upgrade") icon.classList.add("good");
+    if (unsupported) icon.classList.add("bad");
+    const badge = document.getElementById("install-summary-badge");
+    badge.className = "badge" + (unsupported ? " bad" : upstreamPending ? " warn" : action.kind === "current" || action.kind === "newer" ? " good" : "");
+    if (unsupported) {
+      badge.textContent = "需要处理";
+      text("install-summary-title", "现有 OpenClaw 无法安全识别");
+      text("install-summary-detail", status.message || "请先处理本机 OpenClaw 状态。");
+    } else if (action.kind === "upgrade") {
+      badge.textContent = "可安全升级";
+      text("install-summary-title", "可以升级到 LongHub 审核版本 " + reviewedInstallVersion());
+      text("install-summary-detail", upstreamPending ? "npm 官方还发布了 " + installLatestVersion + "，该版本仍在等待 LongHub 审核。" : "升级前会检查环境，确认后才会安装。你的配置和工作区保持不变。");
+    } else if (upstreamPending) {
+      badge.textContent = "发现官方新版";
+      text("install-summary-title", "OpenClaw " + installLatestVersion + " 已发布，等待审核");
+      text("install-summary-detail", "当前可一键安装的安全版本仍是 " + reviewedInstallVersion() + "，审核完成前不会自动升级。");
+    } else if (action.kind === "current") {
+      badge.textContent = "已是最新审核版";
+      text("install-summary-title", "OpenClaw " + (status.version || "") + " 已是最新审核版本");
+      text("install-summary-detail", installLatestCheckFailed ? "暂时无法检查 npm 官方最新版本，请刷新后重试。" : "当前不需要重装或升级。");
+    } else if (action.kind === "newer") {
+      badge.textContent = "已安装更高版本";
+      text("install-summary-title", "当前 OpenClaw " + (status.version || "") + " 高于 LongHub 审核版本");
+      text("install-summary-detail", "LongHub 不会把你已安装的版本自动降级。");
+    } else {
+      badge.textContent = installed ? "已安装" : "尚未安装";
+      text("install-summary-title", installed ? "OpenClaw " + (status.version || "") + " 已安装" : "准备安装 OpenClaw " + reviewedInstallVersion());
+      text("install-summary-detail", installLatestCheckFailed ? "可安装审核版本；npm 官方最新版本暂时检查失败。" : "LongHub 只安装已审核的官方 npm 包，不接管你的配置和工作区。");
+    }
+    text("install-current-version", installed ? status.version || "版本未知" : "未安装");
+    text("install-current-note", installed ? "保留现有配置与工作区" : "可执行全新安装");
+    text("install-node-version", status.node_version || "未发现");
+    text("install-node-note", status.node_compatible ? "版本兼容" : "需要安装兼容版本");
+    syncInstallActions(true);
+  }
+
+  async function loadInstallWorkspace() {
+    installPreflightReady = false;
+    installRuntimeStatus = null;
+    installTargetPackage = "";
+    installReviewedVersion = "";
+    installLatestVersion = "";
+    installLatestCheckFailed = false;
+    resetInstallFlow();
+    document.getElementById("install-operation").hidden = true;
+    text("install-summary-badge", "正在检测");
+    text("install-summary-title", "正在读取本机安装状态");
+    text("install-current-version", "检测中");
+    text("install-target-version", "读取中");
+    text("install-latest-version", "检查中");
+    text("install-latest-note", "正在查询官方源");
+    text("install-node-version", "检测中");
+    text("install-action-note", "先通过无副作用的安装预检。");
+    setInstallBusy(true);
+    const [statusResult, planResult, latestResult] = await Promise.allSettled([
+      call("/api/v1/runtime/status"), call("/api/v1/runtime/install-plan"), call("/api/v1/runtime/latest-version")
+    ]);
+    if (statusResult.status === "fulfilled") installRuntimeStatus = statusResult.value;
+    if (planResult.status === "fulfilled") {
+      installTargetPackage = planResult.value.package || "";
+      installReviewedVersion = installVersion(installTargetPackage);
+      text("install-target-note", "官方 npm 包 · 固定审核版本");
+    } else {
+      text("install-target-note", planResult.reason.message);
+    }
+    if (latestResult.status === "fulfilled") {
+      installLatestVersion = latestResult.value.latest_version || "";
+      if (!installReviewedVersion) installReviewedVersion = latestResult.value.reviewed_version || "";
+    } else {
+      installLatestCheckFailed = true;
+    }
+    text("install-target-version", installReviewedVersion || "暂不可用");
+    renderLatestVersionCard();
+    updateInstallSummary();
+    setInstallBusy(false);
+  }
+
+  function installCheck(label, state, detail) {
+    const node = el("div", "install-check" + (state === true ? " good" : state === false ? " bad" : ""), "");
+    node.append(el("strong", "", state === true ? "✓" : state === false ? "×" : "•"), el("span", "", label + (detail ? " · " + detail : "")));
+    return node;
+  }
+
+  function installReportFlag(report, key) {
+    return report && Object.prototype.hasOwnProperty.call(report, key) ? Boolean(report[key]) : null;
+  }
+
+  function renderInstallReport(report, errorMessage = "") {
+    const target = document.getElementById("install-operation");
+    target.hidden = false;
+    target.replaceChildren();
+    const ready = Boolean(report && report.ready);
+    if (report && report.node_version) {
+      text("install-node-version", report.node_version);
+      text("install-node-note", report.node_compatible ? "版本兼容" : "版本不兼容");
+    }
+    const header = el("div", "install-result-head", "");
+    header.append(el("strong", "", ready ? "安装条件已满足" : "安装条件未通过"), el("span", "badge " + (ready ? "good" : "bad"), ready ? "可以安装" : "需要处理"));
+    target.append(header);
+    if (errorMessage) target.append(el("div", "note", errorMessage));
+    const checks = el("div", "install-checks", "");
+    const hasNode = Boolean(report && report.node_version);
+    const hasDisk = report && Object.prototype.hasOwnProperty.call(report, "free_bytes") && Object.prototype.hasOwnProperty.call(report, "min_free_bytes");
+    const configReadable = installReportFlag(report, "config_readable");
+    const workspaceReadable = installReportFlag(report, "workspace_readable");
+    const pathsReadable = configReadable === false || workspaceReadable === false ? false : configReadable === true && workspaceReadable === true ? true : null;
+    checks.append(
+      installCheck("Node.js", hasNode ? Boolean(report.node_compatible) : null, hasNode ? report.node_version : "待检查"),
+      installCheck("npm 命令", installReportFlag(report, "npm_found"), report && report.npm_found ? "已发现" : "未发现或待检查"),
+      installCheck("现有 OpenClaw", report && report.openclaw_found ? Boolean(report.openclaw_compatible) : ready ? true : null, report && report.openclaw_found ? report.openclaw_version || "版本未知" : "未发现或待检查"),
+      installCheck("npm 全局目录", installReportFlag(report, "npm_prefix_writable"), report && report.npm_prefix_writable ? "可写" : "不可写或待检查"),
+      installCheck("配置与工作区", pathsReadable, pathsReadable === true ? "可读取" : pathsReadable === false ? "存在不可读目录" : "待检查"),
+      installCheck("可用磁盘空间", hasDisk ? report.free_bytes >= report.min_free_bytes : null, hasDisk ? Math.floor(report.free_bytes / 1024 / 1024) + " MB" : "待检查")
+    );
+    target.append(checks);
+  }
+
   async function installPreflight() {
-    setLoading("install-operation");
-    try { renderInto("install-operation", await call("/api/v1/runtime/install-preflight")); }
-    catch (error) { if (error.body && error.body.report) renderInto("install-operation", error.body); else renderError("install-operation", error); }
+    if (installBusy) return;
+    installPreflightReady = false;
+    setInstallBusy(true);
+    setInstallStep(1, "active", "正在执行只读环境检查…");
+    text("install-action-note", "正在检查，不会修改任何文件。");
+    try {
+      const report = await call("/api/v1/runtime/install-preflight");
+      installPreflightReady = Boolean(report.ready);
+      renderInstallReport(report);
+      setInstallStep(1, "success", "全部安装条件已通过");
+      const action = installActionState();
+      setInstallStep(2, "active", action.kind === "upgrade" ? "等待你确认升级到审核版本" : "等待你确认安装审核版本");
+      text("install-action-note", action.kind === "upgrade" ? "预检已通过，可以开始安全升级。" : "预检已通过，可以开始安装。");
+    } catch (error) {
+      renderInstallReport((error.body && error.body.report) || {}, error.message);
+      setInstallStep(1, "failed", "存在未通过的安装条件");
+      text("install-action-note", "处理失败项目后重新检查。");
+    } finally {
+      setInstallBusy(false);
+    }
   }
 
   async function installOpenClaw() {
-    if (!confirm("安装固定审核版本的 OpenClaw？现有不兼容版本会被预检阻止。")) return;
-    setLoading("install-operation", "正在安装…");
+    const action = installActionState();
+    if (installBusy || !installPreflightReady || !action.allowed) return;
+    const targetVersion = reviewedInstallVersion();
+    const actionText = action.kind === "upgrade" ? "升级" : "安装";
+    if (!confirm(actionText + " OpenClaw 到 " + targetVersion + "？现有配置和工作区不会被接管。")) return;
+    setInstallStep(2, "success", "已确认固定审核版本");
+    setInstallStep(3, "active", "正在通过官方 npm " + actionText + "…");
+    text("install-action-note", actionText + "进行中，请不要关闭 Manager。");
+    setInstallBusy(true);
     try {
-      renderInto("install-operation", await call("/api/v1/runtime/install", {
+      await call("/api/v1/runtime/install", {
         method: "POST", headers: { "content-type": "application/json" }, body: '{"confirm":true}'
-      }));
+      });
+      setInstallStep(3, "success", actionText + "完成并已提交状态复查");
+      const result = document.getElementById("install-operation");
+      result.hidden = false;
+      result.replaceChildren(el("div", "install-result-head", ""));
+      result.firstElementChild.append(el("strong", "", "OpenClaw " + actionText + "完成"), el("span", "badge good", "成功"));
+      installPreflightReady = false;
       await refreshOverview();
-    } catch (error) { renderError("install-operation", error); }
+      const [statusResult, latestResult] = await Promise.allSettled([
+        call("/api/v1/runtime/status"), call("/api/v1/runtime/latest-version")
+      ]);
+      if (statusResult.status === "fulfilled") installRuntimeStatus = statusResult.value;
+      installLatestCheckFailed = latestResult.status !== "fulfilled";
+      installLatestVersion = latestResult.status === "fulfilled" ? latestResult.value.latest_version || "" : "";
+      renderLatestVersionCard();
+      updateInstallSummary();
+      text("install-action-note", actionText + "完成；如需运行，请前往服务管理启动 Gateway。");
+    } catch (error) {
+      setInstallStep(3, "failed", "安装未完成，请查看错误后重试");
+      const result = document.getElementById("install-operation");
+      result.hidden = false;
+      result.replaceChildren(el("div", "error-state", error.message));
+      text("install-action-note", "请重新运行安装预检后再试。");
+      installPreflightReady = false;
+    } finally {
+      setInstallBusy(false);
+    }
   }
 
   async function managerUpdate(action) {
@@ -1002,8 +1829,10 @@
   document.getElementById("agent-new-session").addEventListener("click", newAgentSession);
   document.getElementById("open-dashboard").addEventListener("click", event => control("dashboard", event.currentTarget));
   document.getElementById("overview-refresh").addEventListener("click", refreshOverview);
+  document.getElementById("services-refresh").addEventListener("click", () => loadServicesWorkspace());
   document.getElementById("backup-refresh").addEventListener("click", loadBackups);
   document.getElementById("backup-create").addEventListener("click", createBackup);
+  document.getElementById("install-refresh").addEventListener("click", loadInstallWorkspace);
   document.getElementById("preflight").addEventListener("click", installPreflight);
   document.getElementById("install").addEventListener("click", installOpenClaw);
   document.getElementById("update-check").addEventListener("click", () => managerUpdate(""));

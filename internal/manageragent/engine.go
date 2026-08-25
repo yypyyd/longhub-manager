@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	maxAgentRounds      = 8
+	maxAgentRounds      = 12
 	maxUserMessageBytes = 8 * 1024
 	maxToolResultBytes  = 32 * 1024
 	maxSessionMessages  = 80
@@ -32,7 +32,8 @@ const systemPrompt = `你是 LongHub Manager 内置管家，独立于 OpenClaw G
 3. 用户拒绝后尊重拒绝，不得换一种写工具绕过。
 4. 不索要或回显 API Key、Token、密码；不要输出本地绝对路径。
 5. OpenClaw 未安装时先使用安装预检，再建议安装；配置异常时先诊断再修复。
-6. 回答使用简洁中文，说明发现、行动结果和下一步。`
+6. 回答使用简洁中文，说明发现、行动结果和下一步。
+7. 多个互不依赖的只读检查应在同一轮同时请求，不要逐项串行调用。`
 
 var agentSecretPattern = regexp.MustCompile(`(?i)(bearer\s+|(?:api[_-]?key|token|password|secret)\s*[:=]\s*)[^\s,;]+`)
 var agentCredentialPattern = regexp.MustCompile(`(?i)\b(?:sk|xoxb|xoxp|ghp|github_pat)-[a-z0-9_-]{12,}`)
@@ -70,6 +71,20 @@ type TurnResponse struct {
 	Approval  *Approval `json:"approval,omitempty"`
 	Done      bool      `json:"done"`
 }
+
+// TurnEvent reports only bounded, user-safe lifecycle metadata. Tool results,
+// model state and credentials never cross this stream; the final answer is
+// still sanitized and returned through TurnResponse.
+type TurnEvent struct {
+	Type    string `json:"type"`
+	Message string `json:"message,omitempty"`
+	Tool    string `json:"tool,omitempty"`
+	Summary string `json:"summary,omitempty"`
+	Round   int    `json:"round,omitempty"`
+	Success *bool  `json:"success,omitempty"`
+}
+
+type EventSink func(TurnEvent)
 
 type pendingState struct {
 	approval  Approval
@@ -145,6 +160,10 @@ func PublicErrorMessage(err error) string {
 }
 
 func (e *Engine) Turn(ctx context.Context, sessionID, userMessage string) (TurnResponse, error) {
+	return e.TurnWithEvents(ctx, sessionID, userMessage, nil)
+}
+
+func (e *Engine) TurnWithEvents(ctx context.Context, sessionID, userMessage string, events EventSink) (TurnResponse, error) {
 	userMessage = strings.TrimSpace(userMessage)
 	if userMessage == "" || len(userMessage) > maxUserMessageBytes || strings.ContainsRune(userMessage, '\x00') {
 		return TurnResponse{}, errors.New("消息为空或超过大小限制")
@@ -161,7 +180,8 @@ func (e *Engine) Turn(ctx context.Context, sessionID, userMessage string) (TurnR
 	}
 	session.messages = append(session.messages, Message{Role: "user", Content: userMessage})
 	session.updated.Store(e.now().UnixNano())
-	response, err := e.continueLocked(ctx, sessionID, session, nil)
+	emitTurnEvent(events, TurnEvent{Type: "turn_started", Message: "已收到请求"})
+	response, err := e.continueLocked(ctx, sessionID, session, nil, events)
 	if err != nil && newSession {
 		e.Reset(sessionID)
 	}
@@ -169,6 +189,15 @@ func (e *Engine) Turn(ctx context.Context, sessionID, userMessage string) (TurnR
 }
 
 func (e *Engine) ResolveApproval(ctx context.Context, sessionID, approvalID string, approved bool) (TurnResponse, error) {
+	return e.ResolveApprovalWithEvents(ctx, sessionID, approvalID, approved, nil)
+}
+
+func (e *Engine) ResolveApprovalWithEvents(
+	ctx context.Context,
+	sessionID, approvalID string,
+	approved bool,
+	events EventSink,
+) (TurnResponse, error) {
 	_, session, err := e.sessionExisting(sessionID)
 	if err != nil {
 		return TurnResponse{}, err
@@ -182,22 +211,26 @@ func (e *Engine) ResolveApproval(ctx context.Context, sessionID, approvalID stri
 	session.pending = nil
 	steps := make([]Step, 0, 1)
 	if approved {
+		emitTurnEvent(events, TurnEvent{Type: "tool_started", Tool: pending.call.Function.Name, Summary: pending.approval.Summary})
 		result, runErr := e.executeTool(ctx, pending.call)
-		steps = append(steps, Step{Tool: pending.call.Function.Name, Summary: pending.approval.Summary, Success: runErr == nil})
+		success := runErr == nil
+		steps = append(steps, Step{Tool: pending.call.Function.Name, Summary: pending.approval.Summary, Success: success})
+		emitTurnEvent(events, TurnEvent{Type: "tool_completed", Tool: pending.call.Function.Name, Summary: pending.approval.Summary, Success: boolPointer(success)})
 		result = toolResultContent(result, runErr)
 		session.messages = append(session.messages, Message{Role: "tool", ToolCallID: pending.call.ID, Content: result})
 	} else {
 		steps = append(steps, Step{Tool: pending.call.Function.Name, Summary: "用户拒绝执行", Success: false})
+		emitTurnEvent(events, TurnEvent{Type: "tool_completed", Tool: pending.call.Function.Name, Summary: "已拒绝执行", Success: boolPointer(false)})
 		session.messages = append(session.messages, Message{Role: "tool", ToolCallID: pending.call.ID, Content: "用户拒绝了此操作。不要再次请求同一操作，除非用户明确改变决定。"})
 	}
-	response, paused, err := e.processCallsLocked(ctx, sessionID, session, pending.remaining, steps)
+	response, paused, err := e.processCallsLocked(ctx, sessionID, session, pending.remaining, steps, events)
 	if err != nil {
 		return e.approvalSummaryFallback(sessionID, session, steps, approved), nil
 	}
 	if paused {
 		return response, err
 	}
-	final, err := e.continueLocked(ctx, sessionID, session, response.Steps)
+	final, err := e.continueLocked(ctx, sessionID, session, response.Steps, events)
 	if err != nil {
 		return e.approvalSummaryFallback(sessionID, session, response.Steps, approved), nil
 	}
@@ -221,7 +254,7 @@ func (e *Engine) Reset(sessionID string) {
 	e.mu.Unlock()
 }
 
-func (e *Engine) continueLocked(ctx context.Context, sessionID string, session *agentSession, steps []Step) (TurnResponse, error) {
+func (e *Engine) continueLocked(ctx context.Context, sessionID string, session *agentSession, steps []Step, events EventSink) (TurnResponse, error) {
 	for round := 0; round < maxAgentRounds; round++ {
 		config, apiKey, err := e.config.Credentials()
 		if err != nil {
@@ -230,6 +263,7 @@ func (e *Engine) continueLocked(ctx context.Context, sessionID string, session *
 		messages := make([]Message, 0, len(session.messages)+1)
 		messages = append(messages, Message{Role: "system", Content: systemPrompt})
 		messages = append(messages, session.messages...)
+		emitTurnEvent(events, TurnEvent{Type: "model_started", Round: round + 1, Message: "正在分析当前信息"})
 		assistant, err := e.model.Complete(ctx, config, apiKey, messages, e.tools)
 		if err != nil {
 			return TurnResponse{}, err
@@ -241,15 +275,71 @@ func (e *Engine) continueLocked(ctx context.Context, sessionID string, session *
 				return TurnResponse{}, errors.New("管家模型返回了空回复")
 			}
 			e.compactLocked(session)
+			emitTurnEvent(events, TurnEvent{Type: "answer_started", Round: round + 1, Message: "正在生成答复"})
 			return TurnResponse{SessionID: sessionID, Reply: strings.TrimSpace(assistant.Content), Steps: steps, Done: true}, nil
 		}
-		response, paused, err := e.processCallsLocked(ctx, sessionID, session, assistant.ToolCalls, steps)
+		emitTurnEvent(events, TurnEvent{Type: "model_completed", Round: round + 1, Message: "已生成检查计划"})
+		response, paused, err := e.processCallsLocked(ctx, sessionID, session, assistant.ToolCalls, steps, events)
 		if err != nil || paused {
 			return response, err
 		}
 		steps = response.Steps
 	}
-	return TurnResponse{}, errors.New("管家连续工具调用超过安全轮次限制")
+	return e.finalizeAtRoundLimit(ctx, sessionID, session, steps, events)
+}
+
+func (e *Engine) finalizeAtRoundLimit(
+	ctx context.Context,
+	sessionID string,
+	session *agentSession,
+	steps []Step,
+	events EventSink,
+) (TurnResponse, error) {
+	if err := ctx.Err(); err != nil {
+		return TurnResponse{}, err
+	}
+	config, apiKey, err := e.config.Credentials()
+	if err == nil {
+		messages := make([]Message, 0, len(session.messages)+2)
+		messages = append(messages, Message{Role: "system", Content: systemPrompt})
+		messages = append(messages, session.messages...)
+		messages = append(messages, Message{
+			Role:    "system",
+			Content: "本轮只读工具预算已用完。不得再调用工具；请立即基于已有工具结果给出简洁总结，说明已确认的问题、失败的检查和建议的下一步。",
+		})
+		emitTurnEvent(events, TurnEvent{
+			Type: "model_started", Round: maxAgentRounds + 1, Message: "正在汇总已有检查结果",
+		})
+		assistant, completeErr := e.model.Complete(ctx, config, apiKey, messages, nil)
+		if completeErr == nil && len(assistant.ToolCalls) == 0 && strings.TrimSpace(assistant.Content) != "" {
+			session.messages = append(session.messages, assistant)
+			session.updated.Store(e.now().UnixNano())
+			e.compactLocked(session)
+			emitTurnEvent(events, TurnEvent{
+				Type: "answer_started", Round: maxAgentRounds + 1, Message: "正在生成检查总结",
+			})
+			return TurnResponse{
+				SessionID: sessionID, Reply: strings.TrimSpace(assistant.Content), Steps: steps, Done: true,
+			}, nil
+		}
+	}
+
+	failed := 0
+	for _, step := range steps {
+		if !step.Success {
+			failed++
+		}
+	}
+	reply := fmt.Sprintf("本轮已完成 %d 项检查，并在安全预算处停止。", len(steps))
+	if failed > 0 {
+		reply += fmt.Sprintf("其中 %d 项检查失败。", failed)
+	}
+	reply += "你可以让我继续检查未完成项。"
+	e.compactLocked(session)
+	emitTurnEvent(events, TurnEvent{
+		Type: "answer_started", Round: maxAgentRounds + 1, Message: "正在生成检查总结",
+	})
+	return TurnResponse{SessionID: sessionID, Reply: reply, Steps: steps, Done: true}, nil
 }
 
 func (e *Engine) processCallsLocked(
@@ -258,12 +348,14 @@ func (e *Engine) processCallsLocked(
 	session *agentSession,
 	calls []ToolCall,
 	steps []Step,
+	events EventSink,
 ) (TurnResponse, bool, error) {
 	for index, call := range calls {
 		spec, ok := e.specs[call.Function.Name]
 		if !ok {
 			session.messages = append(session.messages, Message{Role: "tool", ToolCallID: call.ID, Content: "未知或未授权的工具。"})
 			steps = append(steps, Step{Tool: call.Function.Name, Summary: "拒绝未知工具", Success: false})
+			emitTurnEvent(events, TurnEvent{Type: "tool_completed", Tool: call.Function.Name, Summary: "拒绝未授权工具", Success: boolPointer(false)})
 			continue
 		}
 		args := json.RawMessage(call.Function.Arguments)
@@ -271,6 +363,7 @@ func (e *Engine) processCallsLocked(
 		if !json.Valid(args) || json.Unmarshal(args, &arguments) != nil || arguments == nil {
 			session.messages = append(session.messages, Message{Role: "tool", ToolCallID: call.ID, Content: "工具参数不是有效 JSON。"})
 			steps = append(steps, Step{Tool: call.Function.Name, Summary: "参数无效", Success: false})
+			emitTurnEvent(events, TurnEvent{Type: "tool_completed", Tool: call.Function.Name, Summary: "工具参数无效", Success: boolPointer(false)})
 			continue
 		}
 		if spec.RequiresApproval {
@@ -280,14 +373,28 @@ func (e *Engine) processCallsLocked(
 			}
 			approval := Approval{ID: approvalID, Tool: call.Function.Name, Summary: spec.ApprovalSummary, Args: args}
 			session.pending = &pendingState{approval: approval, call: call, remaining: append([]ToolCall(nil), calls[index+1:]...)}
+			emitTurnEvent(events, TurnEvent{Type: "approval_required", Tool: call.Function.Name, Summary: spec.ApprovalSummary})
 			return TurnResponse{SessionID: sessionID, Steps: steps, Approval: &approval, Done: false}, true, nil
 		}
+		emitTurnEvent(events, TurnEvent{Type: "tool_started", Tool: call.Function.Name, Summary: spec.ApprovalSummary})
 		result, runErr := e.executeTool(ctx, call)
-		steps = append(steps, Step{Tool: call.Function.Name, Summary: spec.ApprovalSummary, Success: runErr == nil})
+		success := runErr == nil
+		steps = append(steps, Step{Tool: call.Function.Name, Summary: spec.ApprovalSummary, Success: success})
+		emitTurnEvent(events, TurnEvent{Type: "tool_completed", Tool: call.Function.Name, Summary: spec.ApprovalSummary, Success: boolPointer(success)})
 		result = toolResultContent(result, runErr)
 		session.messages = append(session.messages, Message{Role: "tool", ToolCallID: call.ID, Content: result})
 	}
 	return TurnResponse{SessionID: sessionID, Steps: steps}, false, nil
+}
+
+func emitTurnEvent(sink EventSink, event TurnEvent) {
+	if sink != nil {
+		sink(event)
+	}
+}
+
+func boolPointer(value bool) *bool {
+	return &value
 }
 
 func (e *Engine) executeTool(ctx context.Context, call ToolCall) (string, error) {

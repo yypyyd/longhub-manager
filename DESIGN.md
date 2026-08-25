@@ -86,17 +86,17 @@ Responses，也允许用户在页面显式覆盖。
   工具结果大小。写工具逐项确认，用户拒绝时不执行。
 - Manager 控制面在本机，但用户启用管家 Agent 后，对话和脱敏工具结果会发送到用户配置的
   模型服务；产品文案和模块文档必须明确这一边界。
-- Foundation Authenticode 与 LongHub Ed25519 更新签名是两套信任边界：前者证明 Windows 二进制来源，后者绑定更新 manifest 与具体安装包字节，不能互相替代。
-- 正式签名请求只能来自公开 GitHub Actions 的固定 commit。版本资源生成器以 `go.mod`/`go.sum` 固定版本与校验和；安装包和主程序都必须包含一致的产品名、版本和版权元数据。
-- 每次 Foundation 签名请求均需维护者人工批准。签名后重新验证 Authenticode、发布者、可信时间戳、大小、SHA-256、安装、卸载和更新流程。
+- Windows 安装包不使用 Authenticode 发布者证书；GitHub Actions 只从版本标签构建，并将安装包与 SHA-256 绑定发布。版本资源生成器以 `go.mod`/`go.sum` 固定版本与校验和，安装包和主程序包含一致的产品名、版本和版权元数据。
+- LongHub Ed25519 更新签名继续绑定更新 manifest 与具体安装包字节，用于 Manager 自动更新的完整性校验；它不向 Windows 提供发布者身份，也不会消除 SmartScreen 提示。
+- 正式版本需验证版本标签、SHA-256、安装、卸载和更新流程；GitHub Release 已存在时流水线拒绝覆盖。
 
-## 签名方案选择
+## Windows 发布方案
 
-免费 Manager 使用 SignPath Foundation 为符合条件的开源项目提供的托管 OV 级 Authenticode。证书私钥保存在 Foundation 的签名基础设施中，不进入开发机、GitHub 仓库、Actions secret 或生产服务器。Windows 显示的发布者是 `SignPath Foundation`，不是 LongHub；需要 LongHub 自有发布者主体时必须迁移到单独购买并完成身份验证的商业证书。
+Manager 使用公开 GitHub Actions 生成 Windows 安装包。手动运行只上传限期保存的测试 artifact；`v<major>.<minor>.<patch>` 标签在测试通过后把安装包与 SHA-256 发布到 GitHub Releases。流水线明确验证产物未带 Authenticode 签名，避免误把未知来源的签名产物当作官方构建。
 
-没有使用自签名证书，因为它不能建立 Windows 公共信任；也没有把 Cloud Plugin/CLI 的 Ed25519 key 用作 Authenticode，因为 Windows 不认可该信任根。GitHub Actions 先生成明确标注的 unsigned candidate，Foundation 审核和项目配置完成后才接入正式签名步骤。
+没有使用自签名证书，因为它不能建立 Windows 公共信任；也没有把 Cloud Plugin/CLI 或 Manager 更新的 Ed25519 key 用作 Authenticode，因为 Windows 不认可该信任根。用户首次安装时可能看到“未知发布者”或 SmartScreen 提示，项目下载说明必须如实说明这一限制。
 
-项目主页、下载页和 [Code signing policy](CODE_SIGNING_POLICY.md) 公开构建来源、维护者角色、人工审批和隐私边界。仓库与 SignPath 账户必须启用多因素认证。
+项目主页和下载页公开构建来源、SHA-256、维护者角色和隐私边界。仓库维护账户必须启用多因素认证。
 
 ## 迁移
 
@@ -104,13 +104,57 @@ Responses，也允许用户在页面显式覆盖。
 
 ## 已知限制
 
-SignPath Foundation 有权基于项目声誉、来源控制和条款审核接受或拒绝申请；公开仓库和 Apache-2.0
-许可证不保证获批。当前 `0.2.0` 只是通过本机安装/卸载验收的 unsigned candidate，正式
-Authenticode、Foundation 项目配置和签名后 Windows E2E 尚未完成，因此不能宣称它是生产签名安装包，
-也不能激活生产 rollout。Cloud Plugin/CLI 已完成的 Ed25519、Portal 和 OpenClaw E2E 属于独立产品面，
-不能替代 Manager 门禁。
+当前 Windows 安装包不携带 Authenticode 发布者签名，因此首次下载或安装可能被浏览器、
+SmartScreen 或组织策略提示或拦截。版本标签构建仍需完成 SHA-256、Windows 安装/卸载和
+Manager Ed25519 更新验收后才能激活生产 rollout。Cloud Plugin/CLI 的 Ed25519、Portal 和
+OpenClaw E2E 属于独立产品面，不能替代 Manager 门禁。
 
 ## 变更历史
+
+### 2026-08-26 - 未签名 GitHub Windows 发布链
+
+**变更内容**：移除 SignPath/Authenticode 候选构建和证书分支。Manager `v*` 标签通过公开
+GitHub Actions 构建未签名安装包，验证产品边界和 `NotSigned` 状态，生成 SHA-256 后直接发布到
+GitHub Releases；手动运行只保留测试 artifact，已存在的 Release 不允许覆盖。
+
+**变更理由**：项目选择接受 Windows 的未知发布者/SmartScreen 提示，不再让外部代码签名审批
+阻塞发布，同时保留可复现构建来源和下载摘要。
+
+**影响范围**：只影响 `longhub-manager` 的 Windows 构建脚本、GitHub Actions 和发布文档；不改变
+Manager 完整新版界面、安装内容、Cloud/Capabilities 仓库或 Manager Ed25519 自动更新验签。
+
+### 2026-08-25 - OpenClaw 控制台启动不再阻塞页面
+
+Windows 上“打开 OpenClaw”不再同步等待中间 `cmd.exe start` 启动器退出。Manager 直接以
+`CREATE_NEW_CONSOLE | CREATE_NEW_PROCESS_GROUP` 创建只执行固定 `openclaw dashboard` 的独立可见
+控制台，Windows 接受进程后立即释放句柄并返回；该进程不绑定 HTTP 请求上下文，因此页面返回后
+命令行窗口不会被取消。后端发现与启动仍有 15 秒上限，前端另设 12 秒兜底并在超时后恢复按钮，
+避免任何启动异常把首页永久留在“正在执行”。
+
+### 2026-08-25 - 服务页首次进入自动呈现状态
+
+服务管理页不再以“选择操作以查看结果”的空白占位开始。进入页面时并行执行固定、只读的 Gateway
+`status` 与 Windows 启动任务 `task-status`，立即呈现运行状态、健康、版本、运行归属和自动启动
+状态；检查期间显示明确的加载反馈，失败时保留可见错误和刷新入口。启动、停止、重启或调整自动
+启动后会重新读取实际状态，并依据归属和能力禁用不安全或无意义的按钮。原有服务按钮全部保留。
+
+### 2026-08-25 - 引导式 OpenClaw 安装页
+
+安装页按真实能力命名为“OpenClaw 安装”。页面分别展示当前安装、LongHub 固定审核目标、npm
+官方最新版本和 Node.js 环境，并把操作组织为环境检查、方案确认、安装验证三步。官方版本检查只
+执行固定的只读 `npm view openclaw version --json`，响应不暴露 npm 路径或参数；查询结果只用于
+提示，不会改变固定安装包。官方版本高于审核目标时显示“等待审核”，审核目标高于本机版本时才
+显示“升级到 x.x.x”，版本相同时主按钮显示“已是最新审核版本”并保持禁用，不再用“重新安装”
+误导用户。安装按钮仍只有在无副作用预检返回 `ready=true` 后才能点击，服务端安装时再次预检并
+始终安装固定审核包。安装完成后重新读取本机和官方版本，保持“检查后行动”的产品边界。
+
+### 2026-08-25 - 管家全宽对话工作台
+
+管家页面移除独立欢迎横幅，让聊天卡始终占满主内容宽度和顶栏以下的全部可用高度；标题与输入区
+固定在面板内，只有中间消息列表在溢出时独立滚动。真实执行事件以对话内的横向状态卡呈现，
+默认只显示当前状态、步骤数、失败数和耗时，完整步骤按需展开。四个常用入口固定在输入框上方，
+模型设置移入标题栏弹层。这避免了欢迎内容和永久侧栏压缩对话，也避免长工具时间线制造窄而高
+的消息气泡。普通消息与执行状态统一使用 `1200px` 最大宽度，小窗口自动缩至可用宽度。
 
 ### 2026-08-25 - 管家模型连接校验
 
@@ -159,7 +203,9 @@ CLI 输出不得出现在 Skills 响应中。
 
 刷新总览时会调用 `openclaw`、`npm` 和 Windows 系统探测命令。Windows 子进程统一设置
 `HideWindow` 与 `CREATE_NO_WINDOW`，包括 `.cmd` shim，避免探测过程创建可见的
-`openclaw` 终端窗口；命令输出仍然由 Manager 在后台读取。
+`openclaw` 终端窗口；命令输出仍然由 Manager 在后台读取。用户主动点击
+“打开 OpenClaw”是唯一例外：Manager 创建独立、可见且保留的命令行窗口，
+窗口内只由固定启动器执行 `openclaw dashboard`，便于用户看到 OpenClaw 的输出和交互提示。
 
 ### 2026-08-17 - WebView2 桌面窗口
 
@@ -172,6 +218,6 @@ loopback API、托盘和单实例唤醒；页面改为参考 ClawPanel 信息架
 
 Manager 升级为 `0.1.1`，移除 Cloud pairing、execution credential、Bridge、enrollment 和插件 artifact，旧 Cloud 入口统一迁移错误。Manager release 固定 `product_surface=longhub-manager`，生产 `0.1.0` 候选继续暂停。
 
-### 2026-08-17 - 独立开源与 SignPath 候选链
+### 2026-08-17 - 独立开源与 Windows 发布链
 
-将 Manager 源码复制到独立的 `yypyyd/longhub-manager` 项目，采用 Apache-2.0 并加入公开签名政策、隐私说明和贡献审核规则。新增固定依赖的 Windows 版本资源生成和 GitHub Actions unsigned candidate 构建，为 SignPath Foundation 来源验证和后续 Authenticode 接入做准备；收费 Cloud 产品不进入该仓库或证书范围。
+将 Manager 源码复制到独立的 `yypyyd/longhub-manager` 项目，采用 Apache-2.0 并加入隐私说明和贡献审核规则。新增固定依赖的 Windows 版本资源生成和 GitHub Actions 构建；收费 Cloud 产品不进入该仓库或安装包范围。

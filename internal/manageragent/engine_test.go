@@ -94,6 +94,29 @@ func TestEngineRunsReadToolAndReturnsGroundedReply(t *testing.T) {
 	}
 }
 
+func TestEngineEmitsRealModelAndToolLifecycleEvents(t *testing.T) {
+	engine, _ := newScriptedEngine(t, modelToolCall("read_status"), modelReply("状态正常。"))
+	events := make([]TurnEvent, 0)
+	response, err := engine.TurnWithEvents(t.Context(), "", "请检查状态", func(event TurnEvent) {
+		events = append(events, event)
+	})
+	if err != nil || response.Reply != "状态正常。" {
+		t.Fatalf("unexpected streamed turn: response=%#v err=%v", response, err)
+	}
+	want := []string{"turn_started", "model_started", "model_completed", "tool_started", "tool_completed", "model_started", "answer_started"}
+	if len(events) != len(want) {
+		t.Fatalf("unexpected lifecycle events: %#v", events)
+	}
+	for index, eventType := range want {
+		if events[index].Type != eventType {
+			t.Fatalf("event %d=%q want %q; all=%#v", index, events[index].Type, eventType, events)
+		}
+	}
+	if events[3].Tool != "read_status" || events[4].Success == nil || !*events[4].Success {
+		t.Fatalf("tool lifecycle event is incomplete: start=%#v done=%#v", events[3], events[4])
+	}
+}
+
 func TestEngineRequiresApprovalForWriteTool(t *testing.T) {
 	engine, executor := newScriptedEngine(t, modelToolCall("write_repair"), modelReply("修复完成。"))
 	first, err := engine.Turn(t.Context(), "", "修复它")
@@ -142,20 +165,41 @@ func TestEngineReportsExecutedWriteWhenModelSummaryFails(t *testing.T) {
 	}
 }
 
-func TestEngineLimitsToolRounds(t *testing.T) {
-	responses := make([]string, maxAgentRounds)
-	for i := range responses {
-		responses[i] = modelToolCall("read_status")
+func TestEngineSummarizesWhenToolRoundBudgetIsExhausted(t *testing.T) {
+	responses := make([]string, 0, maxAgentRounds+1)
+	for range maxAgentRounds {
+		responses = append(responses, modelToolCall("read_status"))
 	}
+	responses = append(responses, modelReply("检查预算已用完，以下是已有结果。"))
 	engine, executor := newScriptedEngine(t, responses...)
-	if _, err := engine.Turn(t.Context(), "", "循环检查"); err == nil || !strings.Contains(err.Error(), "安全轮次") {
-		t.Fatalf("expected tool round limit, got %v", err)
+	response, err := engine.Turn(t.Context(), "", "循环检查")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !response.Done || response.Reply != "检查预算已用完，以下是已有结果。" {
+		t.Fatalf("expected a forced final summary, got %#v", response)
 	}
 	if len(executor.executed) != maxAgentRounds {
 		t.Fatalf("unexpected execution count: %d", len(executor.executed))
 	}
-	if len(engine.sessions) != 0 {
-		t.Fatal("failed new session should be discarded")
+	if len(engine.sessions) != 1 {
+		t.Fatal("summarized session should remain available")
+	}
+}
+
+func TestEngineUsesSafeFallbackWhenRoundLimitSummaryFails(t *testing.T) {
+	responses := make([]string, 0, maxAgentRounds+1)
+	for range maxAgentRounds {
+		responses = append(responses, modelToolCall("read_status"))
+	}
+	responses = append(responses, `{"not":"a model response"}`)
+	engine, _ := newScriptedEngine(t, responses...)
+	response, err := engine.Turn(t.Context(), "", "循环检查")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !response.Done || !strings.Contains(response.Reply, "安全预算") {
+		t.Fatalf("expected safe fallback, got %#v", response)
 	}
 }
 

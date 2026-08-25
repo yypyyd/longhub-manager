@@ -14,12 +14,12 @@ device pairing, a Manager Bridge, or bundled OpenClaw binaries. LongHub Cloud
 services are separate products and are not part of this repository or its
 Apache-2.0 license.
 
-## Code signing policy
+## Release integrity
 
-Free code signing provided by [SignPath.io](https://about.signpath.io),
-certificate by [SignPath Foundation](https://signpath.org).
-
-See the complete [code signing policy](CODE_SIGNING_POLICY.md),
+Windows installers are built from version tags by the public GitHub Actions
+workflow and published together with a SHA-256 digest. They intentionally do
+not carry an Authenticode publisher signature, so Windows SmartScreen may show
+an unknown-publisher warning during installation. See the
 [privacy policy](PRIVACY.md), [contribution rules](CONTRIBUTING.md) and
 [Apache License 2.0](LICENSE).
 
@@ -32,13 +32,24 @@ See the complete [code signing policy](CODE_SIGNING_POLICY.md),
   Responses/Chat-Completions-compatible
   model, fixed local tools and explicit approval for every write operation;
   the Agent remains fully available whether the Gateway is running or not.
+- Stream real model-round, tool execution, approval and answer events into the
+  conversation so long-running diagnostics visibly progress instead of appearing frozen.
+- Keep the Agent conversation full-width and full-height, with an internally
+  scrolling message list, compact expandable execution details, persistent quick
+  actions above the composer and model settings in an anchored popover.
 - Test the saved Manager Agent model, credential and tool-call protocol before
   use, and show bounded redacted provider errors instead of treating stored
   fields as proof that the model is available.
 - Discover the system-native Node.js and OpenClaw installation.
 - Run a fail-closed install preflight and install the pinned upstream OpenClaw
-  package only after explicit confirmation.
+  package only after explicit confirmation. The guided install workspace shows
+  the current version, LongHub-reviewed target, latest official npm version,
+  Node.js state and preflight gate. A newer unreviewed upstream release is shown
+  as pending review and never silently becomes the one-click install target.
 - Start, stop, restart and inspect the local OpenClaw Gateway.
+- Load the Gateway, health, ownership and Windows autostart state immediately
+  when the service workspace opens, so the page never starts as an unexplained
+  empty action area.
 - Manage the current user's Gateway startup task.
 - Give the Manager Agent structured, redacted access to models, Agents,
   channels, Cron, memory, usage, sessions, Skills, plugins, security and
@@ -66,16 +77,15 @@ go vet ./...
 go build ./cmd/longhub-manager
 
 ./scripts/build-windows-release.ps1 `
-  -Version 0.2.1 `
-  -CloudApiBaseUrl https://154-9-26-158.sslip.io `
-  -AllowUnsigned
+  -Version 0.2.15 `
+  -CloudApiBaseUrl https://154-9-26-158.sslip.io
 ```
 
-`-AllowUnsigned` is only for isolated testing and the candidate submitted to
-the SignPath review pipeline. Public releases must pass the repository's
-Authenticode, publisher, timestamp, SHA-256, installation, uninstallation and
-update gates. Signing certificates, private keys and credentials must never be
-stored in the repository.
+Pushing a `v<major>.<minor>.<patch>` tag runs the same tests, builds the Windows
+installer, records its SHA-256 digest and publishes both files to GitHub
+Releases. A manual workflow run produces a downloadable test artifact without
+creating a public release. Release credentials must never be stored in the
+repository.
 
 Silent NSIS installs (`/S`) do not launch Manager automatically; interactive
 installs launch the native window after successful installation.
@@ -88,9 +98,13 @@ The Windows build uses the system Microsoft Edge WebView2 Runtime for the
 embedded Manager window, so Manager startup does not launch the user's default
 browser. The explicit **Open OpenClaw** action delegates to `openclaw
 dashboard`, which opens OpenClaw's own Control UI using the browser behavior
-owned by OpenClaw. The Manager WebView profile is stored under the current
-user’s LongHub configuration directory and is isolated from ordinary browser
-profiles.
+owned by OpenClaw. On Windows this explicit action also opens a persistent,
+visible command window for OpenClaw's output and prompts; background discovery
+and health commands remain hidden. The console is detached after Windows
+accepts the process, so opening it never blocks the Manager page; a bounded UI
+timeout restores the action if Windows cannot complete the launch. The Manager WebView profile is stored under
+the current user’s LongHub configuration directory and is isolated from
+ordinary browser profiles.
 
 The release executable declares per-monitor-v2 DPI awareness and initializes
 the same mode before creating its tray or WebView windows. Windows therefore
@@ -117,6 +131,10 @@ LongHub Manager 是免费的开源 Windows 桌面应用，用于发现和管理�
 通过固定、脱敏工具检查这些状态，并在逐次确认后执行类型化操作。执行修复前必须创建恢复点；
 修复后配置未通过验证时自动回滚。
 
+OpenClaw 安装页分别展示本机已安装版本、LongHub 已审核的一键安装版本和 npm 官方最新版本。
+官方发布新版但尚未完成审核时，页面只提示“等待审核”，不会把未经审核的版本自动作为安装目标；
+只有审核版本高于本机版本时，主按钮才会明确显示“升级到 x.x.x”。
+
 Manager 控制面和本机工具只在回环地址运行。使用可选管家 Agent 时，对话、工具定义和回答
 所需的脱敏工具结果会发送到用户自己配置的模型服务；API Key 与普通配置分离保存，且不会
 返回 WebView。
@@ -125,8 +143,9 @@ Manager 控制面和本机工具只在回环地址运行。使用可选管家 Ag
 不包含在本仓库、Manager 进程或安装包内，也不使用本仓库的 Apache-2.0 许可证。
 
 安装脚本不会创建或暂存 `artifacts`，也不会读取旧的
-`NativePluginArtifactDirectory` 或 `INCLUDE_NATIVE_PLUGIN_ARTIFACT`。正式版本必须
-通过 SignPath Authenticode 和 Windows 安装验收后才能开放下载。
+`NativePluginArtifactDirectory` 或 `INCLUDE_NATIVE_PLUGIN_ARTIFACT`。版本标签由公开
+GitHub Actions 构建，安装包与 SHA-256 一起发布。安装包不带 Authenticode 发布者签名，
+Windows 可能显示“未知发布者”或 SmartScreen 提示。
 
 ## Repository layout
 

@@ -1,4 +1,4 @@
-name: Windows release candidate
+name: Windows release
 
 on:
   pull_request:
@@ -8,15 +8,15 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: Semantic version for a manually dispatched candidate
+        description: Semantic version for a manually dispatched build
         required: true
-        default: 0.1.2
+        default: 0.2.15
 
 permissions:
   contents: read
 
 concurrency:
-  group: manager-windows-${{ github.ref }}
+  group: manager-windows-release-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -33,11 +33,13 @@ jobs:
       - run: go vet ./...
       - run: go build ./cmd/longhub-manager
 
-  candidate:
+  package:
     if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v')
     needs: test
     runs-on: windows-latest
     timeout-minutes: 25
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
@@ -63,16 +65,15 @@ jobs:
       - name: Install NSIS
         shell: pwsh
         run: choco install nsis --no-progress --yes
-      - name: Build unsigned candidate for SignPath
+      - name: Build Windows installer
         shell: pwsh
         env:
           RELEASE_VERSION: ${{ steps.version.outputs.value }}
         run: |
           ./scripts/build-windows-release.ps1 `
             -Version $env:RELEASE_VERSION `
-            -CloudApiBaseUrl 'https://154-9-26-158.sslip.io' `
-            -AllowUnsigned
-      - name: Verify candidate boundary and record digest
+            -CloudApiBaseUrl 'https://154-9-26-158.sslip.io'
+      - name: Verify release boundary and record digest
         shell: pwsh
         env:
           RELEASE_VERSION: ${{ steps.version.outputs.value }}
@@ -83,19 +84,40 @@ jobs:
           }
           $signature = Get-AuthenticodeSignature -LiteralPath $installer
           if ($signature.Status -ne 'NotSigned') {
-            throw "Unsigned candidate has unexpected signature status: $($signature.Status)"
+            throw "Installer has unexpected Authenticode status: $($signature.Status)"
           }
           $hash = (Get-FileHash -LiteralPath $installer -Algorithm SHA256).Hash.ToLowerInvariant()
           "$hash  LongHub-Manager-Setup-$env:RELEASE_VERSION.exe" |
             Set-Content -LiteralPath "$installer.sha256" -Encoding ascii -NoNewline
           if (Test-Path -LiteralPath 'release/artifacts') {
-            throw 'Manager candidate must not contain Cloud artifacts'
+            throw 'Manager release must not contain Cloud artifacts'
           }
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: longhub-manager-${{ steps.version.outputs.value }}-unsigned
+          name: longhub-manager-${{ steps.version.outputs.value }}-windows
           path: |
             release/LongHub-Manager-Setup-${{ steps.version.outputs.value }}.exe
             release/LongHub-Manager-Setup-${{ steps.version.outputs.value }}.exe.sha256
           if-no-files-found: error
-          retention-days: 14
+          retention-days: 30
+      - name: Publish GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+          RELEASE_VERSION: ${{ steps.version.outputs.value }}
+        run: |
+          if (gh release view $env:RELEASE_TAG --repo $env:GITHUB_REPOSITORY 2>$null) {
+            throw "GitHub Release already exists and will not be overwritten: $env:RELEASE_TAG"
+          }
+          $installer = "release/LongHub-Manager-Setup-$env:RELEASE_VERSION.exe"
+          $digest = "$installer.sha256"
+          gh release create $env:RELEASE_TAG $installer $digest `
+            --repo $env:GITHUB_REPOSITORY `
+            --verify-tag `
+            --generate-notes `
+            --title "LongHub Manager $env:RELEASE_TAG"
+          if ($LASTEXITCODE -ne 0) {
+            throw 'GitHub Release publication failed'
+          }

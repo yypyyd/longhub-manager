@@ -62,6 +62,7 @@ func NewServerWithOptions(adapter *runtime.NativeAdapter, token string, options 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/v1/runtime/status", s.handleStatus)
 	mux.HandleFunc("/api/v1/runtime/install-plan", s.handleInstallPlan)
+	mux.HandleFunc("/api/v1/runtime/latest-version", s.handleLatestVersion)
 	mux.HandleFunc("/api/v1/runtime/install-preflight", s.handleInstallPreflight)
 	mux.HandleFunc("/api/v1/runtime/install", s.handleInstall)
 	mux.HandleFunc("/api/v1/runtime/control", s.handleControl)
@@ -77,7 +78,9 @@ func NewServerWithOptions(adapter *runtime.NativeAdapter, token string, options 
 	mux.HandleFunc("/api/v1/agent/config", s.handleAgentConfig)
 	mux.HandleFunc("/api/v1/agent/config/test", s.handleAgentConfigTest)
 	mux.HandleFunc("/api/v1/agent/turn", s.handleAgentTurn)
+	mux.HandleFunc("/api/v1/agent/turn/stream", s.handleAgentTurnStream)
 	mux.HandleFunc("/api/v1/agent/approval", s.handleAgentApproval)
+	mux.HandleFunc("/api/v1/agent/approval/stream", s.handleAgentApprovalStream)
 	mux.HandleFunc("/api/v1/agent/session/reset", s.handleAgentReset)
 	mux.HandleFunc("/", s.handleWeb)
 	s.http = &http.Server{
@@ -208,6 +211,19 @@ func (s *Server) handleInstallPlan(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, plan)
+}
+
+func (s *Server) handleLatestVersion(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED")
+		return
+	}
+	info, err := s.adapter.LatestOpenClawVersion(r.Context())
+	if err != nil {
+		writeError(w, http.StatusServiceUnavailable, "OPENCLAW_VERSION_CHECK_UNAVAILABLE")
+		return
+	}
+	writeJSON(w, http.StatusOK, info)
 }
 
 func (s *Server) handleInstallPreflight(w http.ResponseWriter, r *http.Request) {

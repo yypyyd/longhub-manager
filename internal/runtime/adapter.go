@@ -2,6 +2,7 @@ package runtime
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -151,12 +152,34 @@ type InstallPlan struct {
 	Reason  string   `json:"reason"`
 }
 
+// OpenClawVersionInfo separates the version LongHub has reviewed for a
+// one-click installation from the latest release currently published by the
+// official npm registry. Registry data is informational only and never changes
+// the package used by InstallNative.
+type OpenClawVersionInfo struct {
+	LatestVersion   string `json:"latest_version"`
+	ReviewedVersion string `json:"reviewed_version"`
+}
+
 type CommandRunner interface {
 	LookPath(file string) (string, error)
 	Run(ctx context.Context, name string, args ...string) ([]byte, error)
 }
 
+// DashboardCommandRunner is an optional user-facing launcher. Unlike ordinary
+// probes, the dashboard action may open a visible terminal so the user can see
+// OpenClaw's own output and interact with any prompt it presents. The command
+// argument remains runtime-discovered and the implementation hard-codes the
+// sole allowed "dashboard" subcommand.
+type DashboardCommandRunner interface {
+	LaunchDashboard(ctx context.Context, name string) error
+}
+
 type OSCommandRunner struct{}
+
+func (OSCommandRunner) LaunchDashboard(ctx context.Context, name string) error {
+	return launchDashboardCommand(ctx, name)
+}
 
 func (OSCommandRunner) Run(ctx context.Context, name string, args ...string) ([]byte, error) {
 	name, args = resolveWindowsShimCommand(name, args)
@@ -369,9 +392,17 @@ func (a *NativeAdapter) GatewayRemoveScheduledTask(ctx context.Context, confirm 
 // to OpenClaw itself. Manager never constructs or returns a dashboard URL,
 // because that URL can contain a short-lived authentication token.
 func (a *NativeAdapter) OpenDashboard(ctx context.Context) error {
-	command, err := findOpenClaw(ctx, a.runner)
+	launchCtx, cancel := context.WithTimeout(ctx, a.timeout)
+	defer cancel()
+	command, err := findOpenClaw(launchCtx, a.runner)
 	if err != nil {
 		return errors.New("未发现原生 OpenClaw")
+	}
+	if launcher, ok := a.runner.(DashboardCommandRunner); ok {
+		if launchErr := launcher.LaunchDashboard(launchCtx, command); launchErr != nil {
+			return errors.New("OpenClaw 控制台打开失败")
+		}
+		return nil
 	}
 	if _, runErr := a.run(ctx, command, "dashboard"); runErr != nil {
 		return errors.New("OpenClaw 控制台打开失败")
@@ -434,6 +465,28 @@ func (a *NativeAdapter) NativeInstallPlan(ctx context.Context) (InstallPlan, err
 		Command: npm,
 		Args:    []string{"install", "--global", "--no-fund", "--no-audit", OpenClawPackage},
 		Reason:  "使用官方 npm 包安装到用户系统的原生全局位置；LongHub 不复制运行时",
+	}, nil
+}
+
+// LatestOpenClawVersion performs a read-only lookup using a fixed npm package
+// and fixed arguments. The HTTP layer cannot provide package names, tags or
+// flags, and the returned registry value never becomes an install target.
+func (a *NativeAdapter) LatestOpenClawVersion(ctx context.Context) (OpenClawVersionInfo, error) {
+	npm, err := a.runner.LookPath("npm")
+	if err != nil {
+		return OpenClawVersionInfo{}, errors.New("无法检查官方最新版本：未发现 npm")
+	}
+	output, runErr := a.run(ctx, npm, "view", "openclaw", "version", "--json")
+	if runErr != nil {
+		return OpenClawVersionInfo{}, errors.New("官方最新版本检查失败")
+	}
+	latest, parseErr := parseNpmVersionOutput(output)
+	if parseErr != nil {
+		return OpenClawVersionInfo{}, errors.New("官方版本响应无法识别")
+	}
+	return OpenClawVersionInfo{
+		LatestVersion:   latest,
+		ReviewedVersion: strings.TrimPrefix(OpenClawPackage, "openclaw@"),
 	}, nil
 }
 
@@ -860,6 +913,7 @@ func (a *NativeAdapter) lookupNodeVersion(ctx context.Context) (string, error) {
 }
 
 var versionPattern = regexp.MustCompile(`(?i)(?:openclaw\s+)?v?(\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?)`)
+var exactNpmVersionPattern = regexp.MustCompile(`^\d+\.\d+\.\d+(?:-[0-9A-Za-z]+(?:\.[0-9A-Za-z]+)*)?(?:\+[0-9A-Za-z]+(?:\.[0-9A-Za-z]+)*)?$`)
 
 func parseVersion(output string) string {
 	match := versionPattern.FindStringSubmatch(output)
@@ -867,6 +921,22 @@ func parseVersion(output string) string {
 		return ""
 	}
 	return match[1]
+}
+
+func parseNpmVersionOutput(output string) (string, error) {
+	trimmed := strings.TrimSpace(output)
+	if trimmed == "" || len(trimmed) > 256 {
+		return "", errors.New("npm version output is empty or too large")
+	}
+	var version string
+	if err := json.Unmarshal([]byte(trimmed), &version); err != nil {
+		return "", errors.New("npm version output is not a JSON string")
+	}
+	version = strings.TrimSpace(version)
+	if len(version) > 128 || !exactNpmVersionPattern.MatchString(version) {
+		return "", errors.New("npm version output is not a valid version")
+	}
+	return version, nil
 }
 
 func supportedNodeVersion(version string) bool {

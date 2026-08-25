@@ -5,8 +5,8 @@ Please open an issue before proposing a behavioral or architectural change.
 
 All changes from non-maintainers must be submitted through a pull request and
 reviewed by the project maintainer. Release workflow, installer, dependency and
-code-signing changes require explicit maintainer approval. Contributors must
-not commit credentials, signing keys, certificates, generated installers or
+release-integrity changes require explicit maintainer approval. Contributors
+must not commit credentials, update-signing keys, generated installers or
 private Cloud Skill implementation details.
 
 Run the required checks before submitting a change:

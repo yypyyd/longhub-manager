@@ -128,6 +128,32 @@ func TestOpenDashboardUsesFixedOpenClawCommand(t *testing.T) {
 	}
 }
 
+type dashboardFakeRunner struct {
+	*fakeRunner
+	launchedName string
+	launchErr    error
+}
+
+func (f *dashboardFakeRunner) LaunchDashboard(_ context.Context, name string) error {
+	f.launchedName = name
+	return f.launchErr
+}
+
+func TestOpenDashboardUsesUserFacingLauncherWhenAvailable(t *testing.T) {
+	base := &fakeRunner{path: "openclaw", output: "must not be captured"}
+	runner := &dashboardFakeRunner{fakeRunner: base}
+	adapter := NewNativeAdapter(runner)
+	if err := adapter.OpenDashboard(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if runner.launchedName != "openclaw" {
+		t.Fatalf("unexpected dashboard launcher command: %q", runner.launchedName)
+	}
+	if runner.lastName != "" || len(runner.lastArgs) != 0 {
+		t.Fatalf("dashboard launcher must not fall back to captured execution: %q %v", runner.lastName, runner.lastArgs)
+	}
+}
+
 func TestBoundedCommandOutputStoresPrefixAndSignalsLimit(t *testing.T) {
 	output := &boundedCommandOutput{max: 5}
 	if written, err := output.Write([]byte("123")); err != nil || written != 3 {
@@ -450,6 +476,42 @@ func TestUnsupportedNodeIsRejectedForInstallPlan(t *testing.T) {
 	runner := &fakeRunner{path: "npm", nodePath: "node", nodeOut: "v23.0.0"}
 	if _, err := NewNativeAdapter(runner).NativeInstallPlan(context.Background()); err == nil {
 		t.Fatal("expected unsupported Node to reject install plan")
+	}
+}
+
+func TestLatestOpenClawVersionUsesFixedReadOnlyNpmCommand(t *testing.T) {
+	runner := &fakeRunner{path: "npm", output: `"2026.8.3"`}
+	info, err := NewNativeAdapter(runner).LatestOpenClawVersion(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if runner.lastName != "npm" || !slicesEqual(runner.lastArgs, []string{"view", "openclaw", "version", "--json"}) {
+		t.Fatalf("unexpected npm version lookup: name=%q args=%v", runner.lastName, runner.lastArgs)
+	}
+	if info.LatestVersion != "2026.8.3" || info.ReviewedVersion != "2026.7.1-2" {
+		t.Fatalf("unexpected version info: %+v", info)
+	}
+}
+
+func TestLatestOpenClawVersionRejectsMalformedRegistryOutput(t *testing.T) {
+	for _, output := range []string{
+		`2026.8.3`,
+		`{"version":"2026.8.3"}`,
+		`"latest"`,
+		`"2026.8.3; whoami"`,
+	} {
+		runner := &fakeRunner{path: "npm", output: output}
+		if _, err := NewNativeAdapter(runner).LatestOpenClawVersion(context.Background()); err == nil {
+			t.Fatalf("expected malformed npm output to fail: %q", output)
+		}
+	}
+}
+
+func TestLatestOpenClawVersionReturnsBoundedFailure(t *testing.T) {
+	runner := &fakeRunner{path: "npm", output: "registry secret should not escape", runErr: errors.New("network failed")}
+	_, err := NewNativeAdapter(runner).LatestOpenClawVersion(context.Background())
+	if err == nil || strings.Contains(err.Error(), "registry secret") || strings.Contains(err.Error(), "network failed") {
+		t.Fatalf("version failure exposed command diagnostics: %v", err)
 	}
 }
 

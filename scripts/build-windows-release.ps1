@@ -8,8 +8,7 @@ param(
   [ValidatePattern('^https://[^/?#]+$')]
   [string]$CloudApiBaseUrl,
 
-  [string]$OutputDirectory = (Join-Path $PSScriptRoot '..\release'),
-  [switch]$AllowUnsigned
+  [string]$OutputDirectory = (Join-Path $PSScriptRoot '..\release')
 )
 
 $ErrorActionPreference = 'Stop'
@@ -74,21 +73,6 @@ try {
   } | ConvertTo-Json
   [IO.File]::WriteAllText((Join-Path $stage 'release-config.json'), $releaseConfig + "`n", [Text.UTF8Encoding]::new($false))
 
-  $signTool = Get-ChildItem 'C:\Program Files (x86)\Windows Kits\10\bin' -Recurse -Filter signtool.exe -ErrorAction SilentlyContinue |
-    Sort-Object FullName -Descending | Select-Object -First 1 -ExpandProperty FullName
-  $thumbprint = ($env:LONGHUB_WINDOWS_SIGNING_SHA1 ?? '').Replace(' ', '')
-  function Invoke-CodeSign([string]$Path) {
-    if ($AllowUnsigned) { return }
-    if (-not $signTool -or $thumbprint -notmatch '^[A-Fa-f0-9]{40}$') {
-      throw 'A trusted code-signing certificate and signtool are required; use -AllowUnsigned only for isolated candidate tests'
-    }
-    & $signTool sign /sha1 $thumbprint /fd SHA256 /tr 'http://timestamp.digicert.com' /td SHA256 $Path
-    if ($LASTEXITCODE -ne 0) { throw "Code signing failed: $Path" }
-    $signature = Get-AuthenticodeSignature -LiteralPath $Path
-    if ($signature.Status -ne 'Valid') { throw "Authenticode validation failed: $Path" }
-  }
-  Invoke-CodeSign $managerExe
-
   $makeNsis = Join-Path ${env:ProgramFiles(x86)} 'NSIS\makensis.exe'
   if (-not (Test-Path -LiteralPath $makeNsis -PathType Leaf)) { throw 'NSIS 3 is not installed' }
   New-Item -ItemType Directory -Path $outputRoot -Force | Out-Null
@@ -102,7 +86,6 @@ try {
   if ($LASTEXITCODE -ne 0) { throw 'NSIS build failed' }
 
   $installer = Join-Path $outputRoot "LongHub-Manager-Setup-$Version.exe"
-  Invoke-CodeSign $installer
   $installerInfo = Get-Item -LiteralPath $installer
   $installerHash = (Get-FileHash -LiteralPath $installer -Algorithm SHA256).Hash.ToLowerInvariant()
   [pscustomobject]@{
@@ -110,7 +93,7 @@ try {
     installer = $installerInfo.FullName
     size = $installerInfo.Length
     sha256 = $installerHash
-    signed = -not $AllowUnsigned
+    authenticode = 'unsigned'
     cloud_api_base_url = $CloudApiBaseUrl
   } | ConvertTo-Json -Compress
 } finally {
