@@ -40,6 +40,8 @@ type Status struct {
 // page or an OpenClaw model; changing this value requires a reviewed release.
 const OpenClawPackage = "openclaw@2026.7.1-2"
 
+const DefaultCommandOutputBytes = 512 * 1024
+
 // DefaultInstallMinFreeBytes is an explicit, conservative disk budget for a
 // native OpenClaw installation.  It is a preflight threshold only: the
 // Manager never reserves space or creates a probe file in the user's profile.
@@ -123,7 +125,9 @@ var (
 	// fresh install to proceed without an existing OpenClaw command.  Resolver,
 	// permission, malformed-prefix, and runner failures are deliberately kept
 	// distinct and fail closed.
-	ErrOpenClawCommandNotFound = errors.New("native OpenClaw command not found")
+	ErrOpenClawCommandNotFound    = errors.New("native OpenClaw command not found")
+	ErrRepairConfirmationRequired = errors.New("OpenClaw repair requires explicit confirmation")
+	ErrCommandOutputLimit         = errors.New("OpenClaw command output exceeded the Manager limit")
 )
 
 type openClawDiscoveryState uint8
@@ -158,7 +162,7 @@ func (OSCommandRunner) Run(ctx context.Context, name string, args ...string) ([]
 	name, args = resolveWindowsShimCommand(name, args)
 	command := exec.CommandContext(ctx, name, args...)
 	configureBackgroundCommand(command)
-	return command.CombinedOutput()
+	return runBoundedCommand(command, DefaultCommandOutputBytes)
 }
 
 // RunWithEnv is used only for validation against a staged config candidate.
@@ -168,7 +172,47 @@ func (OSCommandRunner) RunWithEnv(ctx context.Context, env []string, name string
 	command := exec.CommandContext(ctx, name, args...)
 	configureBackgroundCommand(command)
 	command.Env = mergeEnvironment(os.Environ(), env)
-	return command.CombinedOutput()
+	return runBoundedCommand(command, DefaultCommandOutputBytes)
+}
+
+type boundedCommandOutput struct {
+	data      []byte
+	max       int
+	truncated bool
+}
+
+func (w *boundedCommandOutput) Write(p []byte) (int, error) {
+	if w.max <= 0 {
+		w.truncated = w.truncated || len(p) > 0
+		return len(p), nil
+	}
+	remaining := w.max - len(w.data)
+	if remaining > 0 {
+		keep := len(p)
+		if keep > remaining {
+			keep = remaining
+		}
+		w.data = append(w.data, p[:keep]...)
+	}
+	if len(p) > remaining {
+		w.truncated = true
+	}
+	return len(p), nil
+}
+
+func runBoundedCommand(command *exec.Cmd, maxBytes int) ([]byte, error) {
+	output := &boundedCommandOutput{max: maxBytes}
+	command.Stdout = output
+	command.Stderr = output
+	err := command.Run()
+	if output.truncated {
+		if err == nil {
+			err = ErrCommandOutputLimit
+		} else {
+			err = errors.Join(err, ErrCommandOutputLimit)
+		}
+	}
+	return output.data, err
 }
 
 // InspectInstallPath is deliberately read-only.  It validates the object
@@ -257,10 +301,11 @@ type environmentCommandRunner interface {
 }
 
 type NativeAdapter struct {
-	runner    CommandRunner
-	timeout   time.Duration
-	gateway   *GatewayManager
-	preflight InstallPreflightOptions
+	runner          CommandRunner
+	timeout         time.Duration
+	mutationTimeout time.Duration
+	gateway         *GatewayManager
+	preflight       InstallPreflightOptions
 }
 
 func NewNativeAdapter(runner CommandRunner) *NativeAdapter {
@@ -271,10 +316,11 @@ func NewNativeAdapter(runner CommandRunner) *NativeAdapter {
 // The HTTP layer intentionally has no way to change these values.
 func NewNativeAdapterWithOptions(runner CommandRunner, options InstallPreflightOptions) *NativeAdapter {
 	return &NativeAdapter{
-		runner:    runner,
-		timeout:   15 * time.Second,
-		gateway:   NewGatewayManager(runner),
-		preflight: options,
+		runner:          runner,
+		timeout:         15 * time.Second,
+		mutationTimeout: 2 * time.Minute,
+		gateway:         NewGatewayManager(runner),
+		preflight:       options,
 	}
 }
 
@@ -317,6 +363,20 @@ func (a *NativeAdapter) GatewayEnrollScheduledTask(ctx context.Context, confirm 
 
 func (a *NativeAdapter) GatewayRemoveScheduledTask(ctx context.Context, confirm bool) (GatewayStatus, error) {
 	return a.gateway.RemoveScheduledTask(ctx, confirm)
+}
+
+// OpenDashboard delegates authentication, configured ports and browser launch
+// to OpenClaw itself. Manager never constructs or returns a dashboard URL,
+// because that URL can contain a short-lived authentication token.
+func (a *NativeAdapter) OpenDashboard(ctx context.Context) error {
+	command, err := findOpenClaw(ctx, a.runner)
+	if err != nil {
+		return errors.New("未发现原生 OpenClaw")
+	}
+	if _, runErr := a.run(ctx, command, "dashboard"); runErr != nil {
+		return errors.New("OpenClaw 控制台打开失败")
+	}
+	return nil
 }
 
 func (a *NativeAdapter) Discover(ctx context.Context) Status {
@@ -387,7 +447,7 @@ func (a *NativeAdapter) InstallNative(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	output, runErr := a.run(ctx, plan.Command, plan.Args...)
+	output, runErr := a.runWithTimeout(ctx, a.mutationTimeout, plan.Command, plan.Args...)
 	if runErr != nil {
 		return "", fmt.Errorf("原生 OpenClaw 安装失败: %s", safeCommandError(runErr, output))
 	}
@@ -754,8 +814,30 @@ func (a *NativeAdapter) RunControl(ctx context.Context, action string) (string, 
 	return strings.TrimSpace(output), nil
 }
 
+// Repair runs the one reviewed OpenClaw repair command. The page cannot pass
+// command fragments or flags, and the caller must create a configuration
+// backup before invoking this method.
+func (a *NativeAdapter) Repair(ctx context.Context, confirm bool) (string, error) {
+	if !confirm {
+		return "", ErrRepairConfirmationRequired
+	}
+	command, err := findOpenClaw(ctx, a.runner)
+	if err != nil {
+		return "", errors.New("未发现原生 OpenClaw")
+	}
+	output, runErr := a.runWithTimeout(ctx, a.mutationTimeout, command, "doctor", "--fix", "--non-interactive")
+	if runErr != nil {
+		return "", fmt.Errorf("OpenClaw repair 失败: %s", safeCommandError(runErr, output))
+	}
+	return strings.TrimSpace(output), nil
+}
+
 func (a *NativeAdapter) run(parent context.Context, command string, args ...string) (string, error) {
-	ctx, cancel := context.WithTimeout(parent, a.timeout)
+	return a.runWithTimeout(parent, a.timeout, command, args...)
+}
+
+func (a *NativeAdapter) runWithTimeout(parent context.Context, timeout time.Duration, command string, args ...string) (string, error) {
+	ctx, cancel := context.WithTimeout(parent, timeout)
 	defer cancel()
 	output, err := a.runner.Run(ctx, command, args...)
 	return string(output), err

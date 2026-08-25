@@ -17,7 +17,7 @@ import (
 	"github.com/yypyyd/longhub-manager/internal/managerupdate"
 )
 
-var version = "0.1.1"
+var version = "0.2.0"
 
 //go:embed assets/manager-update-trusted-keys.json
 var embeddedManagerUpdateTrustAsset []byte

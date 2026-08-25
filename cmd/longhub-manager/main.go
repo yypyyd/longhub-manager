@@ -18,11 +18,14 @@ import (
 
 	"github.com/yypyyd/longhub-manager/internal/configbackup"
 	"github.com/yypyyd/longhub-manager/internal/httpapi"
+	"github.com/yypyyd/longhub-manager/internal/manageragent"
 	"github.com/yypyyd/longhub-manager/internal/managerupdate"
 	"github.com/yypyyd/longhub-manager/internal/runtime"
 )
 
 func main() {
+	enableHighDPI()
+
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	mode, modeErr := parseManagerStartupMode(os.Args[1:])
@@ -73,6 +76,12 @@ func main() {
 	} else {
 		configBackups = manager
 	}
+	var agentConfig *manageragent.ConfigStore
+	if store, agentErr := newManagerAgentConfigStore(os.UserConfigDir); agentErr != nil {
+		log.Printf("LongHub 管家模型配置暂不可用")
+	} else {
+		agentConfig = store
+	}
 	port := envPort("LONGHUB_MANAGER_PORT", 19527)
 	listener, err := net.Listen("tcp4", net.JoinHostPort("127.0.0.1", strconv.Itoa(port)))
 	if err != nil {
@@ -94,6 +103,8 @@ func main() {
 	server := httpapi.NewServerWithOptions(adapter, token, httpapi.ServerOptions{
 		ConfigBackups: configBackups,
 		ManagerUpdate: managerUpdater,
+		AgentConfig:   agentConfig,
+		AgentModel:    manageragent.NewModelClient(nil),
 	})
 
 	go func() {
@@ -209,6 +220,21 @@ func newConfigBackupManager(
 		return nil, errors.New("用户配置目录必须是绝对路径")
 	}
 	return configbackup.New(configPath, filepath.Join(configDir, "LongHub", "backups"))
+}
+
+func newManagerAgentConfigStore(userConfigDir func() (string, error)) (*manageragent.ConfigStore, error) {
+	if userConfigDir == nil {
+		return nil, errors.New("无法确定 LongHub Manager 配置目录")
+	}
+	configDir, err := userConfigDir()
+	if err != nil || strings.TrimSpace(configDir) == "" || !filepath.IsAbs(configDir) {
+		return nil, errors.New("无法确定 LongHub Manager 配置目录")
+	}
+	longHubDir := filepath.Join(filepath.Clean(configDir), "LongHub")
+	return manageragent.NewConfigStore(
+		filepath.Join(longHubDir, "manager-agent.json"),
+		manageragent.NewPlatformSecretStore(filepath.Join(longHubDir, "manager-agent.key")),
+	)
 }
 
 func startupToken() (string, error) {

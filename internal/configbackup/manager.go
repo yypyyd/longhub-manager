@@ -53,6 +53,14 @@ type RestoreResult struct {
 	SafetyBackup *Snapshot `json:"safety_backup,omitempty"`
 }
 
+// MutationCheckpoint captures enough pre-mutation state to restore either an
+// existing configuration or the prior absence of one. It never exposes config
+// bytes or filesystem paths.
+type MutationCheckpoint struct {
+	ConfigExisted bool      `json:"config_existed"`
+	Backup        *Snapshot `json:"backup,omitempty"`
+}
+
 // Validator is called with a temporary file containing the candidate config.
 // The callback should invoke the native OpenClaw validator with its config
 // path overridden to candidatePath.  A nil validator is rejected by Restore:
@@ -110,6 +118,74 @@ func (m *Manager) Backup() (Snapshot, error) {
 		return Snapshot{}, err
 	}
 	return m.writeBackup(data)
+}
+
+// BeginMutation creates a recovery point without forcing a previously absent
+// configuration to exist. Callers must retain the returned checkpoint until a
+// post-mutation validation succeeds.
+func (m *Manager) BeginMutation() (MutationCheckpoint, error) {
+	_, err := os.Lstat(m.configPath)
+	if errors.Is(err, os.ErrNotExist) {
+		return MutationCheckpoint{ConfigExisted: false}, nil
+	}
+	if err != nil {
+		return MutationCheckpoint{}, fmt.Errorf("inspect native config: %w", err)
+	}
+	backup, err := m.Backup()
+	if err != nil {
+		return MutationCheckpoint{}, err
+	}
+	return MutationCheckpoint{ConfigExisted: true, Backup: &backup}, nil
+}
+
+// ValidateActive validates an opaque copy of the active config so the native
+// file cannot change underneath the validator.
+func (m *Manager) ValidateActive(validate Validator) error {
+	if validate == nil {
+		return errors.New("config validator is required")
+	}
+	data, err := m.readActive()
+	if err != nil {
+		return err
+	}
+	tmp, err := m.writeTempConfig(data)
+	if err != nil {
+		return err
+	}
+	defer os.Remove(tmp)
+	if err := validate(tmp); err != nil {
+		return fmt.Errorf("config validation failed: %w", err)
+	}
+	return nil
+}
+
+// RollbackMutation restores the exact pre-mutation state. A generated config
+// is removed only when the checkpoint proves the config was originally absent.
+func (m *Manager) RollbackMutation(checkpoint MutationCheckpoint, validate Validator) (*RestoreResult, error) {
+	if checkpoint.ConfigExisted {
+		if checkpoint.Backup == nil {
+			return nil, errors.New("mutation checkpoint backup is missing")
+		}
+		result, err := m.Restore(checkpoint.Backup.ID, validate)
+		if err != nil {
+			return nil, err
+		}
+		return &result, nil
+	}
+	info, err := os.Lstat(m.configPath)
+	if errors.Is(err, os.ErrNotExist) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("inspect generated config: %w", err)
+	}
+	if info.Mode()&os.ModeSymlink != 0 || !info.Mode().IsRegular() {
+		return nil, errors.New("generated config must be a regular non-symlink file")
+	}
+	if err := os.Remove(m.configPath); err != nil {
+		return nil, fmt.Errorf("remove generated config during rollback: %w", err)
+	}
+	return nil, nil
 }
 
 // Restore validates a backup candidate before atomically replacing the active

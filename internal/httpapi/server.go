@@ -11,8 +11,11 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/yypyyd/longhub-manager/internal/configbackup"
+	"github.com/yypyyd/longhub-manager/internal/manageragent"
 	"github.com/yypyyd/longhub-manager/internal/managerupdate"
 	"github.com/yypyyd/longhub-manager/internal/runtime"
 )
@@ -25,6 +28,10 @@ type Server struct {
 	token         string
 	configBackups *configbackup.Manager
 	managerUpdate *managerupdate.Coordinator
+	agentConfig   *manageragent.ConfigStore
+	agentEngine   *manageragent.Engine
+	configMu      sync.Mutex
+	managementMu  sync.Mutex
 	http          *http.Server
 }
 
@@ -33,6 +40,8 @@ type Server struct {
 type ServerOptions struct {
 	ConfigBackups *configbackup.Manager
 	ManagerUpdate *managerupdate.Coordinator
+	AgentConfig   *manageragent.ConfigStore
+	AgentModel    *manageragent.ModelClient
 }
 
 func NewServer(adapter *runtime.NativeAdapter, token string) *Server {
@@ -45,10 +54,15 @@ func NewServerWithOptions(adapter *runtime.NativeAdapter, token string, options 
 		token:         token,
 		configBackups: options.ConfigBackups,
 		managerUpdate: options.ManagerUpdate,
+		agentConfig:   options.AgentConfig,
+	}
+	if options.AgentConfig != nil && options.AgentModel != nil {
+		s.agentEngine, _ = manageragent.NewEngine(options.AgentConfig, options.AgentModel, &localAgentTools{server: s})
 	}
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/v1/runtime/status", s.handleStatus)
 	mux.HandleFunc("/api/v1/runtime/install-plan", s.handleInstallPlan)
+	mux.HandleFunc("/api/v1/runtime/install-preflight", s.handleInstallPreflight)
 	mux.HandleFunc("/api/v1/runtime/install", s.handleInstall)
 	mux.HandleFunc("/api/v1/runtime/control", s.handleControl)
 	mux.HandleFunc("/api/v1/config/backups", s.handleConfigBackups)
@@ -58,8 +72,22 @@ func NewServerWithOptions(adapter *runtime.NativeAdapter, token string, options 
 	mux.HandleFunc("/api/v1/cloud", s.handleRemovedCloudSkill)
 	mux.HandleFunc("/api/v1/cloud/", s.handleRemovedCloudSkill)
 	mux.HandleFunc("/api/v1/manager-update", s.handleManagerUpdate)
+	mux.HandleFunc("/api/v1/inventory/", s.handleInventory)
+	mux.HandleFunc("/api/v1/manage", s.handleManage)
+	mux.HandleFunc("/api/v1/agent/config", s.handleAgentConfig)
+	mux.HandleFunc("/api/v1/agent/config/test", s.handleAgentConfigTest)
+	mux.HandleFunc("/api/v1/agent/turn", s.handleAgentTurn)
+	mux.HandleFunc("/api/v1/agent/approval", s.handleAgentApproval)
+	mux.HandleFunc("/api/v1/agent/session/reset", s.handleAgentReset)
 	mux.HandleFunc("/", s.handleWeb)
-	s.http = &http.Server{Handler: s.auth(mux)}
+	s.http = &http.Server{
+		Handler:           s.auth(mux),
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       15 * time.Second,
+		WriteTimeout:      5 * time.Minute,
+		IdleTimeout:       60 * time.Second,
+		MaxHeaderBytes:    16 * 1024,
+	}
 	return s
 }
 
@@ -133,6 +161,14 @@ func (s *Server) Shutdown(ctx context.Context) error { return s.http.Shutdown(ct
 
 func (s *Server) auth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("cache-control", "no-store")
+		w.Header().Set("content-security-policy", "default-src 'none'; connect-src 'self'; img-src data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'")
+		w.Header().Set("cross-origin-opener-policy", "same-origin")
+		w.Header().Set("cross-origin-resource-policy", "same-origin")
+		w.Header().Set("permissions-policy", "camera=(), microphone=(), geolocation=()")
+		w.Header().Set("referrer-policy", "no-referrer")
+		w.Header().Set("x-content-type-options", "nosniff")
+		w.Header().Set("x-frame-options", "DENY")
 		if !isLoopback(r) {
 			writeError(w, http.StatusForbidden, "LOCAL_ONLY")
 			return
@@ -174,6 +210,21 @@ func (s *Server) handleInstallPlan(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, plan)
 }
 
+func (s *Server) handleInstallPreflight(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED")
+		return
+	}
+	report, err := s.adapter.InstallPreflight(r.Context())
+	if err != nil {
+		writeJSON(w, http.StatusUnprocessableEntity, map[string]any{
+			"code": "OPENCLAW_INSTALL_PREFLIGHT_FAILED", "report": report,
+		})
+		return
+	}
+	writeJSON(w, http.StatusOK, report)
+}
+
 func (s *Server) handleInstall(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED")
@@ -192,14 +243,14 @@ func (s *Server) handleInstall(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusPreconditionRequired, "USER_CONFIRMATION_REQUIRED")
 		return
 	}
-	output, err := s.adapter.InstallNative(r.Context())
+	_, err := s.adapter.InstallNative(r.Context())
 	if err != nil {
 		writeJSON(w, http.StatusUnprocessableEntity, map[string]string{
 			"code": "OPENCLAW_INSTALL_FAILED", "message": err.Error(),
 		})
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]string{"package": runtime.OpenClawPackage, "output": output})
+	writeJSON(w, http.StatusOK, map[string]any{"package": runtime.OpenClawPackage, "installed": true})
 }
 
 func (s *Server) handleStatus(w http.ResponseWriter, r *http.Request) {
@@ -229,6 +280,12 @@ func (s *Server) handleControl(w http.ResponseWriter, r *http.Request) {
 	switch body.Action {
 	case "status", "health":
 		writeJSON(w, http.StatusOK, s.adapter.GatewayStatus(r.Context()))
+	case "dashboard":
+		if err := s.adapter.OpenDashboard(r.Context()); err != nil {
+			writeJSON(w, http.StatusUnprocessableEntity, map[string]string{"code": "OPENCLAW_DASHBOARD_FAILED"})
+			return
+		}
+		writeJSON(w, http.StatusOK, map[string]any{"action": body.Action, "opened": true})
 	case "task-status":
 		writeJSON(w, http.StatusOK, map[string]any{
 			"action": body.Action, "status": s.adapter.GatewayScheduledTaskStatus(r.Context()),
@@ -253,13 +310,20 @@ func (s *Server) handleControl(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		writeJSON(w, http.StatusOK, map[string]any{"action": body.Action, "status": status})
-	case "doctor":
+	case "doctor", "models", "agents", "channels", "cron":
 		output, err := s.adapter.RunControl(r.Context(), body.Action)
 		if err != nil {
 			writeJSON(w, http.StatusUnprocessableEntity, map[string]string{"code": "OPENCLAW_ACTION_FAILED"})
 			return
 		}
 		writeJSON(w, http.StatusOK, map[string]string{"action": body.Action, "output": output})
+	case "repair":
+		if !body.Confirm {
+			writeError(w, http.StatusPreconditionRequired, "USER_CONFIRMATION_REQUIRED")
+			return
+		}
+		result, status := s.runRepairTransaction(r.Context())
+		writeJSON(w, status, result)
 	case "skills":
 		output, err := s.adapter.RunControl(r.Context(), body.Action)
 		if err != nil {
@@ -327,7 +391,9 @@ func (s *Server) handleConfigBackups(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusBadRequest, "INVALID_JSON")
 			return
 		}
+		s.configMu.Lock()
 		backup, err := s.configBackups.Backup()
+		s.configMu.Unlock()
 		if err != nil {
 			writeError(w, http.StatusUnprocessableEntity, configBackupErrorCode(err))
 			return
@@ -356,6 +422,8 @@ func (s *Server) handleConfigRestore(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "INVALID_RESTORE_REQUEST")
 		return
 	}
+	s.configMu.Lock()
+	defer s.configMu.Unlock()
 	result, err := s.configBackups.Restore(body.BackupID, func(candidatePath string) error {
 		return s.adapter.ValidateConfigCandidate(r.Context(), candidatePath)
 	})

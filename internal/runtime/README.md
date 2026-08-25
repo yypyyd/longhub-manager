@@ -8,6 +8,16 @@ OpenClaw 私有数据库，也不按端口或未知 PID 强制结束进程。
 - `NativeAdapter` 优先通过 `PATH` 发现 `openclaw`、`node` 和 `npm`；Windows 下还检查用户 npm 全局 shim
   目录，必要时通过固定的 `npm prefix -g` 只读解析全局安装位置。它检查版本兼容性，并执行固定的官方
   npm 安装计划和公开 CLI 白名单动作。
+- 所有原生命令的 stdout/stderr 共用 512 KiB 上限；达到上限后继续排空管道并返回
+  `ErrCommandOutputLimit`，避免 CLI 输出造成 Manager 内存无限增长。
+- `Inventory` 只接受代码内固定的 models、Agents、channels、Cron、memory、usage、sessions、Skills、
+  plugins、security 和 diagnostics JSON 命令。返回值必须是单个合法 JSON 值，并递归脱敏凭据字段、
+  常见 Token 格式、敏感 URL 查询参数和用户主目录。
+- `InstallPreflight` 在安装前只读检查 Node.js、npm、现有 OpenClaw 版本、配置/工作区可读性、npm 目录
+  可写性和磁盘空间。`Repair` 只运行固定的 `doctor --fix --non-interactive`，事务备份、验证和回滚由
+  `httpapi` 与 `configbackup` 组合完成。
+- `management.go` 提供类型化管理方法：默认模型、插件启用状态、Agent 消息 Cron 和记忆索引。它们
+  分别校验 ID、文本、调度类型和大小，只组装文档化参数；不提供接收参数切片或命令文本的公共入口。
 - `GatewayManager` 通过 `OpenClawGatewayController` 调用固定的
   `openclaw gateway status/health/start/stop/restart`，把已存在的 Gateway 标记为
   `running_external`，只有本次 Manager 明确启动成功后才标记为 `running_managed`。
@@ -37,7 +47,13 @@ OpenClaw 私有数据库，也不按端口或未知 PID 强制结束进程。
   `EXTERNAL_GATEWAY_CONFIRMATION_REQUIRED`。
 - `enroll-task`、`remove-task`：注册或删除上述固定的 Windows 自动启动任务，必须明确发送 `confirm: true`；
   页面不能传入任务名、路径、命令、参数、触发器或 XML。
-- `doctor`、`skills`：只读诊断/技能列表，沿用受限 CLI 输出。
+- `doctor`、`skills`：兼容旧页面的只读诊断/技能列表。
+- `repair`：必须显式确认，由上层创建恢复点后调用固定修复命令，成功后使用临时候选配置做官方校验；
+  失败由上层恢复原配置或原先缺失状态。
+
+结构化状态页使用 `GET /api/v1/inventory/{kind}`，`kind` 只能映射到编译时白名单。某些 OpenClaw
+检查命令会在发现问题时返回非零退出码但仍提供合法 JSON；这类发现项会保留。超时、取消、输出超限或
+非法 JSON 仍然失败关闭。
 
 未知字段、尾随 JSON 或不在白名单内的动作会在执行命令前拒绝。生命周期错误只返回稳定代码
 （例如 `USER_CONFIRMATION_REQUIRED`、`OPENCLAW_NOT_INSTALLED`、`GATEWAY_STATUS_UNAVAILABLE`），不返回

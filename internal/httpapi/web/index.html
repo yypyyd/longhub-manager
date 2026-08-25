@@ -6,52 +6,1020 @@
   <link rel="icon" href="data:,">
   <title>LongHub Manager</title>
   <style>
-    :root{color-scheme:light;font:14px/1.5 "Segoe UI","Microsoft YaHei",system-ui,sans-serif;background:#f4f6fa;color:#172033;--panel:#fff;--line:#e2e7ef;--muted:#748096;--text:#172033;--accent:#dd6041;--accent-soft:#fff0e9;--blue:#3c70d6;--green:#198754;--red:#c74343;--shadow:0 8px 26px rgba(31,42,68,.055)}
-    :root.dark{color-scheme:dark;--panel:#181d26;--line:#303946;--muted:#9ca8ba;--text:#edf1f7;--accent:#f08361;--accent-soft:#3a2925;--blue:#78a4ff;--green:#54c78a;--red:#ee7777;--shadow:0 8px 26px rgba(0,0,0,.2);background:#11151b}
-    *{box-sizing:border-box}body{margin:0;min-height:100vh;background:#f4f6fa;color:var(--text)}:root.dark body{background:#11151b}button,input{font:inherit}button{cursor:pointer}
-    .app{display:flex;min-height:100vh}.sidebar{width:248px;flex:0 0 248px;background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;padding:20px 12px;transition:width .18s ease}.sidebar.collapsed{width:70px;flex-basis:70px}.brand{display:flex;align-items:center;gap:11px;padding:0 10px 20px}.brand-mark{width:36px;height:36px;border-radius:10px;color:#fff;background:#d85d42;display:grid;place-items:center;font-weight:700;font-size:19px;flex:0 0 36px}.brand strong{display:block;font-size:16px}.brand small{display:block;color:var(--muted);font-size:11px}.sidebar.collapsed .brand>div:last-child,.sidebar.collapsed .section-label,.sidebar.collapsed .nav-text,.sidebar.collapsed .sidebar-footer{display:none}.sidebar.collapsed .brand{justify-content:center;padding-left:0;padding-right:0}.section-label{color:#9aa5b7;font-size:10px;font-weight:700;letter-spacing:.08em;padding:12px 12px 6px;text-transform:uppercase}.nav{display:grid;gap:2px}.nav button{border:0;background:transparent;color:#667187;text-align:left;border-radius:7px;min-height:38px;padding:8px 11px;display:flex;gap:11px;align-items:center;width:100%}:root.dark .nav button{color:#aeb8c8}.nav button:hover{background:rgba(116,128,150,.1);color:var(--text)}.nav button.active{color:#b64c32;background:var(--accent-soft);font-weight:650}:root.dark .nav button.active{color:#ffad8d}.nav .icon{width:18px;text-align:center;font-size:16px;flex:0 0 18px}.sidebar-footer{margin-top:auto;border-top:1px solid var(--line);padding:15px 11px 0;color:var(--muted);font-size:11px}.sidebar-footer strong{display:block;color:var(--text);margin-bottom:3px;font-size:12px}.sidebar-tools{display:flex;gap:5px;margin:0 7px 11px}.icon-button{width:30px;height:30px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--muted)}.icon-button:hover{color:var(--text);border-color:#b9c4d4}.sidebar.collapsed .sidebar-tools{justify-content:center}
-    .content{flex:1;min-width:0;padding:25px clamp(18px,4vw,54px) 48px}.topbar{display:flex;justify-content:space-between;gap:20px;align-items:flex-start;margin-bottom:23px}h1{margin:0;font-size:25px;letter-spacing:-.02em}h2{margin:0;font-size:17px}h3{margin:0;font-size:14px}.subhead{color:var(--muted);margin:5px 0 0}.connection{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:12px;padding:8px 12px;background:var(--panel);border:1px solid var(--line);border-radius:20px;white-space:nowrap}.dot{width:7px;height:7px;border-radius:50%;background:#c6cedb}.dot.online{background:var(--green);box-shadow:0 0 0 3px rgba(25,135,84,.14)}.view{display:none}.view.active{display:block}.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px;margin-bottom:17px}.stat,.panel,.module-card{background:var(--panel);border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow)}.stat{padding:16px 17px}.stat-label{color:var(--muted);font-size:12px}.stat-value{font-size:21px;font-weight:650;margin:6px 0 1px}.stat-note{color:var(--muted);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.panel{padding:20px;margin-bottom:16px}.panel-head{display:flex;justify-content:space-between;gap:14px;align-items:flex-start;margin-bottom:15px}.panel-head p{color:var(--muted);margin:4px 0 0;font-size:12px}.status-banner{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px;border:1px solid #dce5f3;background:#f7faff;border-radius:7px;margin-bottom:15px}:root.dark .status-banner{background:#1b2532;border-color:#35465d}.status-main{display:flex;gap:12px;align-items:center;min-width:0}.status-ring{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;color:var(--green);background:rgba(25,135,84,.13);font-size:18px;flex:0 0 38px}.status-ring.offline{color:var(--red);background:rgba(199,67,67,.13)}.status-title{font-weight:650}.status-detail{color:var(--muted);font-size:12px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.actions{display:flex;flex-wrap:wrap;gap:8px}.button{border:1px solid transparent;background:var(--accent);color:#fff;border-radius:6px;padding:8px 13px;cursor:pointer;font-weight:600}.button:hover{filter:brightness(.96)}.button.secondary{color:var(--muted);background:var(--panel);border-color:#d3dbe7}.button.blue{background:var(--blue)}.button.danger{background:var(--red)}.button:disabled{opacity:.55;cursor:wait}.output{color:var(--muted);background:rgba(116,128,150,.07);border:1px solid var(--line);border-radius:6px;padding:12px;min-height:48px;margin:13px 0 0;white-space:pre-wrap;word-break:break-word;font:12px/1.6 ui-monospace,SFMono-Regular,Consolas,monospace}.output.error{color:var(--red);background:rgba(199,67,67,.07);border-color:rgba(199,67,67,.3)}.split{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(280px,.85fr);gap:16px}.info-list{display:grid;gap:0;margin:0}.info-row{display:flex;justify-content:space-between;gap:20px;padding:10px 0;border-bottom:1px solid var(--line)}.info-row:last-child{border-bottom:0}.info-row dt{color:var(--muted)}.info-row dd{margin:0;text-align:right;font-weight:600;max-width:63%;overflow:hidden;text-overflow:ellipsis}.module-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.module-card{padding:16px;box-shadow:none}.module-card .module-icon{font-size:21px;margin-bottom:10px}.module-card p{color:var(--muted);font-size:12px;min-height:38px;margin:6px 0 13px}.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:6px}table{border-collapse:collapse;width:100%;min-width:540px}th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);font-size:12px}th{color:var(--muted);font-weight:600;background:rgba(116,128,150,.06)}tr:last-child td{border-bottom:0}.notice{padding:12px 14px;border-left:3px solid var(--blue);background:rgba(60,112,214,.08);color:var(--muted);font-size:12px;border-radius:4px}.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.toolbar input{min-width:220px;padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--text)}
-    .skills-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin:2px 0 15px}.skill-metric{padding:13px 16px;border-right:1px solid var(--line)}.skill-metric:last-child{border-right:0}.skill-metric-value{display:block;font-size:20px;font-weight:650}.skill-metric-label{display:block;color:var(--muted);font-size:11px;margin-top:1px}.skills-controls{display:grid;grid-template-columns:minmax(230px,1fr) minmax(140px,180px) minmax(170px,220px);gap:8px;margin-bottom:11px}.skills-controls input,.skills-controls select{width:100%;min-width:0;padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--text)}.skills-result-line{display:flex;justify-content:space-between;gap:12px;align-items:center;color:var(--muted);font-size:11px;margin-bottom:8px}.skills-table table{min-width:760px;table-layout:fixed}.skills-table th:nth-child(1){width:112px}.skills-table th:nth-child(2){width:190px}.skills-table th:nth-child(4){width:170px}.skills-table td{vertical-align:top;line-height:1.55}.skill-name{color:var(--text);font-weight:650;overflow-wrap:anywhere}.skill-description{color:var(--muted);white-space:normal;overflow-wrap:anywhere}.skill-source{color:var(--muted);overflow-wrap:anywhere}.skill-badge{display:inline-flex;align-items:center;min-height:23px;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:650;white-space:nowrap}.skill-badge.ready{color:#157347;background:rgba(25,135,84,.12)}.skill-badge.needs_setup{color:#8a5b00;background:rgba(220,159,30,.15)}.skill-badge.disabled{color:#6e7786;background:rgba(116,128,150,.13)}.skill-badge.unknown{color:var(--muted);background:rgba(116,128,150,.1)}:root.dark .skill-badge.ready{color:#68d49a}:root.dark .skill-badge.needs_setup{color:#f0c76a}.skills-state{padding:44px 16px;text-align:center;color:var(--muted);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}.skills-state.error{color:var(--red)}.skills-hint{margin:11px 0 0;color:var(--muted);font-size:11px}.skills-hint code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace}
-    @media(max-width:980px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.module-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:780px){.sidebar{width:70px;flex-basis:70px;padding:18px 8px}.brand{padding:0 9px 20px}.brand>div:last-child,.section-label,.nav-text,.sidebar-footer{display:none}.nav button{justify-content:center;padding:10px}.sidebar-tools{justify-content:center}.content{padding:21px 16px 35px}.stats,.split,.module-grid{grid-template-columns:1fr}.topbar{display:block}.connection{margin-top:14px;width:fit-content}.status-banner{align-items:flex-start;flex-direction:column}.skills-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.skill-metric:nth-child(2){border-right:0}.skill-metric:nth-child(-n+2){border-bottom:1px solid var(--line)}.skills-controls{grid-template-columns:1fr}}
+    :root {
+      color-scheme: light;
+      font: 14px/1.5 "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
+      --bg: #f6f7fb; --panel: #fff; --panel-2: #fafbfe; --line: #e6e8ef;
+      --text: #181b25; --muted: #7c8496; --primary: #665cff; --primary-2: #5148d8;
+      --soft: #f0efff; --green: #139b64; --green-soft: #e9f8f1;
+      --red: #d94f58; --red-soft: #fff0f1; --amber: #ad7613; --amber-soft: #fff6df;
+      --shadow: 0 9px 28px rgba(31, 34, 48, .055);
+    }
+    :root.dark {
+      color-scheme: dark;
+      --bg: #11131a; --panel: #191c25; --panel-2: #20232e; --line: #303441;
+      --text: #f2f3f7; --muted: #9ba2b4; --primary: #9188ff; --primary-2: #a39cff;
+      --soft: #2b294c; --green: #56d69e; --green-soft: #1d3d31;
+      --red: #ff7c84; --red-soft: #44252b; --amber: #edbf62; --amber-soft: #453a22;
+      --shadow: 0 12px 32px rgba(0, 0, 0, .2);
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); }
+    button, input, select, textarea { font: inherit; }
+    button { cursor: pointer; }
+    .app { display: flex; min-height: 100vh; }
+    .sidebar {
+      width: 248px; flex: 0 0 248px; height: 100vh; position: sticky; top: 0;
+      overflow: auto; background: var(--panel); border-right: 1px solid var(--line);
+      padding: 18px 12px; display: flex; flex-direction: column;
+    }
+    .brand { display: flex; align-items: center; gap: 11px; padding: 2px 10px 17px; }
+    .logo {
+      width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center;
+      color: #fff; font-weight: 800; font-size: 18px;
+      background: linear-gradient(145deg, #8270ff, #5047e5);
+    }
+    .brand strong { font-size: 17px; }
+    .brand small { display: block; color: var(--muted); font-size: 11px; }
+    .label { padding: 13px 12px 5px; color: #a4a9b6; font-size: 10px; font-weight: 700; letter-spacing: .09em; }
+    .nav { display: grid; gap: 2px; }
+    .nav button {
+      width: 100%; border: 0; border-radius: 9px; background: transparent;
+      color: #686f80; padding: 9px 11px; text-align: left;
+    }
+    .nav button:hover { background: var(--bg); color: var(--text); }
+    .nav button.active { background: var(--soft); color: var(--primary); font-weight: 700; }
+    .nav i { display: inline-block; width: 25px; font-style: normal; }
+    .footer { margin-top: auto; padding: 14px 11px 0; border-top: 1px solid var(--line); color: var(--muted); font-size: 11px; }
+    .main { flex: 1; min-width: 0; }
+    .topbar {
+      height: 72px; position: sticky; top: 0; z-index: 4;
+      padding: 0 clamp(20px, 3.5vw, 52px); display: flex; align-items: center; justify-content: space-between;
+      background: color-mix(in srgb, var(--bg), transparent 10%); backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--line);
+    }
+    .connection {
+      display: flex; align-items: center; gap: 7px; padding: 7px 11px;
+      background: var(--panel); border: 1px solid var(--line); border-radius: 18px;
+      color: var(--muted); font-size: 11px;
+    }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: #b8bdc9; }
+    .dot.online { background: var(--green); }
+    .content { padding: 29px clamp(20px, 3.5vw, 52px) 54px; max-width: 1450px; margin: auto; }
+    .head { margin-bottom: 22px; }
+    .head h1 { margin: 0; font-size: 27px; }
+    .head p { margin: 5px 0 0; color: var(--muted); }
+    .view { display: none; }
+    .view.active { display: block; }
+    .grid { display: grid; gap: 15px; }
+    .stats { grid-template-columns: repeat(4, minmax(0, 1fr)); margin-bottom: 15px; }
+    .cols { grid-template-columns: minmax(0, 1.25fr) minmax(300px, .75fr); }
+    .stat, .card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); }
+    .stat { padding: 17px 18px; }
+    .stat label { color: var(--muted); font-size: 12px; }
+    .value { font-size: 22px; font-weight: 720; margin: 10px 0 2px; }
+    .note { color: var(--muted); font-size: 11px; }
+    .truncate { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .card { padding: 20px; margin-bottom: 15px; }
+    .card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 15px; margin-bottom: 15px; }
+    .card h2 { font-size: 17px; margin: 0; }
+    .card-head p { color: var(--muted); font-size: 12px; margin: 4px 0 0; }
+    .status {
+      display: flex; align-items: center; gap: 13px; padding: 17px;
+      border: 1px solid var(--line); border-radius: 12px; background: var(--bg); margin-bottom: 15px;
+    }
+    .status-icon { width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; background: var(--green-soft); color: var(--green); }
+    .status-icon.offline { background: var(--red-soft); color: var(--red); }
+    .status strong { display: block; }
+    .actions, .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+    .btn {
+      border: 1px solid transparent; border-radius: 9px; padding: 8px 14px;
+      background: var(--primary); color: #fff; font-weight: 650;
+    }
+    .btn:hover { background: var(--primary-2); }
+    .btn.secondary { background: var(--panel); border-color: var(--line); color: var(--text); }
+    .btn.secondary:hover { background: var(--soft); border-color: color-mix(in srgb, var(--primary), var(--line) 45%); }
+    .btn.danger { background: var(--red); }
+    .btn.ghost { background: transparent; color: var(--primary); padding-inline: 8px; }
+    .btn:disabled { opacity: .5; cursor: wait; }
+    .notice {
+      padding: 13px 15px; border: 1px solid color-mix(in srgb, var(--primary), transparent 80%);
+      border-radius: 10px; background: var(--soft); color: var(--muted); font-size: 12px;
+    }
+    .quick { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+    .quick button { padding: 15px; text-align: left; border: 1px solid var(--line); border-radius: 11px; background: var(--panel); color: var(--text); }
+    .quick button:hover { background: var(--soft); border-color: var(--primary); }
+    .quick strong, .quick span { display: block; }
+    .quick span { color: var(--muted); font-size: 11px; margin-top: 3px; }
+    .info, .kv { margin: 0; }
+    .info > div, .kv > div { display: grid; grid-template-columns: minmax(125px, .4fr) minmax(0, 1fr); gap: 18px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+    .info > div:last-child, .kv > div:last-child { border: 0; }
+    .info dt, .kv dt { color: var(--muted); }
+    .info dd, .kv dd { min-width: 0; margin: 0; font-weight: 600; word-break: break-word; }
+    .data-state { min-height: 130px; }
+    .loading, .empty, .error-state { text-align: center; padding: 36px 18px; color: var(--muted); border: 1px dashed var(--line); border-radius: 12px; }
+    .error-state { color: var(--red); border-color: color-mix(in srgb, var(--red), transparent 65%); background: var(--red-soft); }
+    .table-wrap { overflow: auto; border: 1px solid var(--line); border-radius: 10px; }
+    .inventory-card .table-wrap { max-height: 560px; }
+    table { border-collapse: collapse; width: 100%; min-width: 620px; }
+    th, td { padding: 11px 13px; border-bottom: 1px solid var(--line); text-align: left; font-size: 12px; vertical-align: top; }
+    tr:last-child td { border-bottom: 0; }
+    th { color: var(--muted); background: var(--panel-2); position: sticky; top: 0; }
+    .record-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+    .record { border: 1px solid var(--line); border-radius: 11px; padding: 13px; background: var(--panel-2); min-width: 0; }
+    .record .kv > div { grid-template-columns: minmax(95px, .4fr) minmax(0, 1fr); padding: 7px 0; }
+    .pill { display: inline-flex; max-width: 100%; align-items: center; padding: 3px 8px; border-radius: 999px; background: var(--soft); color: var(--primary); font-size: 11px; word-break: break-all; }
+    .pill.good { background: var(--green-soft); color: var(--green); }
+    .pill.bad { background: var(--red-soft); color: var(--red); }
+    .pill.warn { background: var(--amber-soft); color: var(--amber); }
+    details.nested { width: 100%; }
+    details.nested > summary { color: var(--primary); cursor: pointer; }
+    details.nested > div { margin-top: 8px; }
+    .operation { margin-top: 14px; }
+    .assistant-hero {
+      padding: 24px; border-radius: 15px; color: #fff; margin-bottom: 15px;
+      background: radial-gradient(circle at 90% 10%, #b7a0ff55, transparent 32%), linear-gradient(135deg, #5148df, #8a67e8);
+    }
+    .assistant-hero h2 { font-size: 22px; margin: 0; }
+    .assistant-hero p { color: #e4e1ff; margin: 7px 0 16px; }
+    .agent-prompts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 9px; }
+    .agent-prompts button { border: 1px solid #ffffff35; border-radius: 10px; background: #ffffff18; color: #fff; padding: 11px; text-align: left; }
+    .agent-prompts button:hover { background: #ffffff27; }
+    .agent-prompts strong, .agent-prompts span { display: block; }
+    .agent-prompts span { color: #e4e1ff; font-size: 11px; margin-top: 2px; }
+    .agent-settings { margin-bottom: 15px; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); }
+    .agent-settings > summary { list-style: none; cursor: pointer; padding: 17px 20px; display: flex; justify-content: space-between; align-items: center; font-weight: 700; }
+    .agent-settings > summary::-webkit-details-marker { display: none; }
+    .agent-settings[open] > summary { border-bottom: 1px solid var(--line); }
+    .settings-body { padding: 20px; }
+    .form-grid { display: grid; grid-template-columns: 1.2fr .7fr .7fr 1fr; gap: 12px; }
+    .manage-grid { display: grid; grid-template-columns: repeat(4, minmax(150px, 1fr)); gap: 10px; align-items: end; }
+    .manage-result { margin-top: 12px; }
+    .field { display: grid; gap: 6px; }
+    .field label { font-size: 12px; font-weight: 650; }
+    .field small { color: var(--muted); }
+    input, select, textarea {
+      width: 100%; border: 1px solid var(--line); border-radius: 9px; background: var(--panel);
+      color: var(--text); padding: 9px 11px; outline: none;
+    }
+    input:focus, select:focus, textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary), transparent 85%); }
+    .chat-card { padding: 0; overflow: hidden; }
+    .chat-head { padding: 16px 20px; border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .chat-head h2 { margin: 0; }
+    .messages { min-height: 360px; max-height: 58vh; overflow: auto; padding: 20px; display: flex; flex-direction: column; gap: 13px; background: var(--panel-2); }
+    .message { display: flex; gap: 9px; max-width: min(820px, 88%); }
+    .message.user { align-self: flex-end; flex-direction: row-reverse; }
+    .avatar { width: 30px; height: 30px; flex: 0 0 30px; border-radius: 9px; display: grid; place-items: center; background: var(--soft); color: var(--primary); font-weight: 800; }
+    .message.user .avatar { background: var(--primary); color: #fff; }
+    .bubble { white-space: pre-wrap; word-break: break-word; padding: 10px 13px; border: 1px solid var(--line); border-radius: 4px 13px 13px 13px; background: var(--panel); }
+    .message.user .bubble { color: #fff; background: var(--primary); border-color: var(--primary); border-radius: 13px 4px 13px 13px; }
+    .message.system { align-self: center; max-width: 94%; }
+    .message.system .avatar { display: none; }
+    .message.system .bubble { background: var(--amber-soft); color: var(--amber); border-color: transparent; border-radius: 10px; font-size: 12px; }
+    .agent-steps { padding: 0 20px; background: var(--panel-2); }
+    .step { display: inline-flex; gap: 6px; align-items: center; margin: 0 6px 8px 0; padding: 5px 9px; border-radius: 8px; background: var(--green-soft); color: var(--green); font-size: 11px; }
+    .step.failed { background: var(--red-soft); color: var(--red); }
+    .approval { margin: 0 20px 14px; padding: 14px; border-radius: 11px; border: 1px solid color-mix(in srgb, var(--amber), transparent 50%); background: var(--amber-soft); }
+    .approval strong { display: block; color: var(--amber); }
+    .approval p { margin: 5px 0 11px; color: var(--muted); }
+    .approval pre { max-height: 130px; overflow: auto; font: 11px/1.5 Consolas, monospace; white-space: pre-wrap; }
+    .composer { padding: 14px 20px 18px; border-top: 1px solid var(--line); background: var(--panel); }
+    .composer-row { display: grid; grid-template-columns: 1fr auto; gap: 9px; align-items: end; }
+    .composer textarea { resize: vertical; min-height: 48px; max-height: 150px; }
+    .composer small { display: block; color: var(--muted); margin-top: 6px; }
+    .badge { display: inline-flex; align-items: center; gap: 5px; padding: 4px 8px; border-radius: 999px; background: var(--soft); color: var(--primary); font-size: 11px; }
+    .badge.good { background: var(--green-soft); color: var(--green); }
+    .badge.bad { background: var(--red-soft); color: var(--red); }
+    @media (max-width: 1050px) {
+      .stats, .quick { grid-template-columns: repeat(2, 1fr); }
+      .agent-prompts { grid-template-columns: repeat(2, 1fr); }
+      .form-grid { grid-template-columns: 1fr; }
+      .manage-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 780px) {
+      .sidebar { width: 70px; flex-basis: 70px; padding: 16px 8px; }
+      .brand > div:last-child, .label, .nav span, .footer { display: none; }
+      .nav button { text-align: center; }
+      .content { padding: 22px 15px; }
+      .stats, .cols, .quick, .agent-prompts { grid-template-columns: 1fr; }
+      .manage-grid { grid-template-columns: 1fr; }
+      .message { max-width: 96%; }
+    }
   </style>
 </head>
 <body>
-<div class="app"><aside class="sidebar" id="sidebar"><div class="brand"><div class="brand-mark">龙</div><div><strong>LongHub</strong><small>本地 OpenClaw 工作台</small></div></div><div class="sidebar-tools"><button class="icon-button" id="sidebar-toggle" title="折叠导航">‹</button><button class="icon-button" id="theme-toggle" title="切换主题">◐</button></div>
-<div class="section-label">监控</div><nav class="nav"><button class="active" data-view="overview"><span class="icon">⌂</span><span class="nav-text">总览</span></button><button data-view="assistant"><span class="icon">✦</span><span class="nav-text">助手</span></button><button data-view="chat"><span class="icon">◌</span><span class="nav-text">会话</span></button><button data-view="services"><span class="icon">◈</span><span class="nav-text">服务</span></button><button data-view="logs"><span class="icon">≡</span><span class="nav-text">日志</span></button></nav>
-<div class="section-label">配置</div><nav class="nav"><button data-view="models"><span class="icon">◇</span><span class="nav-text">模型</span></button><button data-view="agents"><span class="icon">♙</span><span class="nav-text">Agent</span></button><button data-view="gateway"><span class="icon">◉</span><span class="nav-text">Gateway</span></button><button data-view="channels"><span class="icon">⌁</span><span class="nav-text">渠道</span></button><button data-view="security"><span class="icon">▣</span><span class="nav-text">安全</span></button></nav>
-<div class="section-label">数据</div><nav class="nav"><button data-view="memory"><span class="icon">▤</span><span class="nav-text">记忆</span></button><button data-view="cron"><span class="icon">◷</span><span class="nav-text">定时任务</span></button><button data-view="usage"><span class="icon">▥</span><span class="nav-text">用量</span></button></nav>
-<div class="section-label">扩展</div><nav class="nav"><button data-view="skills"><span class="icon">♢</span><span class="nav-text">Skills</span></button><button data-view="extensions"><span class="icon">✧</span><span class="nav-text">插件</span></button></nav>
-<div class="section-label">系统</div><nav class="nav"><button data-view="settings"><span class="icon">⚙</span><span class="nav-text">设置</span></button><button data-view="diagnostics"><span class="icon">⌁</span><span class="nav-text">检查与修复</span></button><button data-view="about"><span class="icon">ⓘ</span><span class="nav-text">关于</span></button></nav><div class="sidebar-footer"><strong>LongHub Manager</strong><span>本机运行 · 数据留在设备</span></div></aside>
-<main class="content"><header class="topbar"><div><h1 id="page-title">总览</h1><p class="subhead" id="page-subtitle">集中管理当前设备上的 OpenClaw 运行环境。</p></div><div class="connection"><span id="connection-dot" class="dot"></span><span id="connection-text">正在连接本地服务</span></div></header>
-<section class="view active" data-page="overview"><div class="stats"><div class="stat"><div class="stat-label">OpenClaw</div><div id="runtime-version" class="stat-value">--</div><div id="runtime-path" class="stat-note">等待检测</div></div><div class="stat"><div class="stat-label">Gateway</div><div id="gateway-state" class="stat-value">检测中</div><div id="gateway-detail" class="stat-note">读取本机服务状态</div></div><div class="stat"><div class="stat-label">配置备份</div><div id="backup-count" class="stat-value">--</div><div class="stat-note">当前可恢复版本</div></div><div class="stat"><div class="stat-label">本地服务</div><div id="service-state" class="stat-value">--</div><div class="stat-note">Loopback API 连接状态</div></div></div><div class="split"><section class="panel"><div class="panel-head"><div><h2>Gateway 运行状态</h2><p>启动、停止或重启本机 Gateway 服务。</p></div><button class="button secondary" data-action="status">刷新</button></div><div class="status-banner"><div class="status-main"><div id="overview-ring" class="status-ring">●</div><div><div id="overview-title" class="status-title">正在读取状态</div><div id="overview-detail" class="status-detail">请稍候</div></div></div></div><div class="actions"><button class="button" data-action="start">启动 Gateway</button><button class="button secondary" data-action="restart">重启</button><button class="button danger" data-action="stop">停止</button></div><pre id="overview-output" class="output">--</pre></section><section class="panel"><div class="panel-head"><div><h2>运行环境</h2><p>当前用户的原生安装信息。</p></div></div><dl class="info-list"><div class="info-row"><dt>Node.js</dt><dd id="node-version">--</dd></div><div class="info-row"><dt>安装状态</dt><dd id="install-state">检测中</dd></div><div class="info-row"><dt>最近检查</dt><dd id="last-check">--</dd></div></dl><div class="actions" style="margin-top:15px"><button class="button blue" data-view-jump="services">打开服务管理</button><button class="button secondary" data-view-jump="diagnostics">运行检查</button></div></section></div><section class="panel"><div class="panel-head"><div><h2>工作台模块</h2><p>按监控、配置、数据和扩展分区组织本地管理能力。</p></div></div><div class="module-grid"><div class="module-card"><div class="module-icon">◇</div><h3>模型与 Agent</h3><p>通过 OpenClaw 固定 CLI 查看模型和 Agent 状态。</p><button class="button secondary" data-view-jump="models">查看模型</button></div><div class="module-card"><div class="module-icon">⌁</div><h3>渠道</h3><p>查看消息渠道健康状态，不保存渠道凭据。</p><button class="button secondary" data-view-jump="channels">查看渠道</button></div><div class="module-card"><div class="module-icon">♢</div><h3>Skills</h3><p>读取本机 Skills 列表并显示诊断输出。</p><button class="button secondary" data-view-jump="skills">查看 Skills</button></div></div></section></section>
-<section class="view" data-page="assistant"><section class="panel"><div class="panel-head"><div><h2>本地助手</h2><p>只调用 LongHub 已固定的诊断动作，不执行页面传入的任意命令。</p></div></div><div class="notice">助手能力先从可审计的本地诊断开始。命令输出会经过长度限制后显示在当前窗口。</div><div class="actions" style="margin-top:15px"><button class="button" data-action="doctor">运行 Doctor</button><button class="button secondary" data-action="skills">检查 Skills</button><button class="button secondary" data-action="status">读取 Gateway 状态</button></div><pre id="assistant-output" class="output">--</pre></section></section>
-<section class="view" data-page="chat"><section class="panel"><div class="panel-head"><div><h2>会话</h2><p>本地 Gateway WebSocket 会话入口。</p></div></div><div class="notice">当前 Manager 只负责本地运行环境和健康状态。会话消息需要先完成 Gateway 配对和 WebSocket 客户端接入，暂不伪造聊天记录。</div><div class="actions" style="margin-top:15px"><button class="button secondary" data-view-jump="services">检查 Gateway</button><button class="button secondary" data-view-jump="diagnostics">打开诊断</button></div></section></section>
-<section class="view" data-page="services"><section class="panel"><div class="panel-head"><div><h2>服务</h2><p>统一查看 Gateway 进程与 Windows 启动任务状态。</p></div><button class="button secondary" data-action="status">刷新</button></div><div class="status-banner"><div class="status-main"><div class="status-ring">●</div><div><div class="status-title" id="services-title">等待检查</div><div class="status-detail" id="services-detail">点击刷新获取服务状态</div></div></div></div><div class="actions"><button class="button" data-action="start">启动 Gateway</button><button class="button secondary" data-action="restart">重启 Gateway</button><button class="button danger" data-action="stop">停止 Gateway</button><button class="button secondary" data-action="task-status">查看启动任务</button></div><pre id="services-output" class="output">--</pre></section></section>
-<section class="view" data-page="logs"><section class="panel"><div class="panel-head"><div><h2>日志与诊断输出</h2><p>从固定的 OpenClaw 诊断命令读取有限输出。</p></div><div class="toolbar"><input id="log-filter" type="search" placeholder="筛选当前输出"><button class="button secondary" data-action="doctor">刷新</button></div></div><pre id="logs-output" class="output" style="min-height:300px">尚未读取日志。点击刷新运行非交互诊断。</pre></section></section>
-<section class="view" data-page="gateway"><section class="panel"><div class="panel-head"><div><h2>Gateway 控制</h2><p>所有操作只作用于本机 OpenClaw，不会暴露到局域网。</p></div><button class="button secondary" data-action="health">健康检查</button></div><div class="actions"><button class="button secondary" data-action="status">刷新状态</button><button class="button" data-action="start">启动 Gateway</button><button class="button secondary" data-action="restart">重启 Gateway</button><button class="button danger" data-action="stop">停止 Gateway</button></div><pre id="gateway-output" class="output">--</pre></section></section>
-<section class="view" data-page="models"><section class="panel"><div class="panel-head"><div><h2>模型</h2><p>读取 OpenClaw 当前模型列表，凭据不会返回到页面。</p></div><button class="button secondary" data-action="models">刷新模型</button></div><pre id="models-output" class="output">点击刷新读取模型列表。</pre></section></section>
-<section class="view" data-page="agents"><section class="panel"><div class="panel-head"><div><h2>Agent</h2><p>查看当前 OpenClaw Agent 清单和可用状态。</p></div><button class="button secondary" data-action="agents">刷新 Agent</button></div><pre id="agents-output" class="output">点击刷新读取 Agent 列表。</pre></section></section>
-<section class="view" data-page="channels"><section class="panel"><div class="panel-head"><div><h2>渠道</h2><p>通过 OpenClaw 状态检查查看消息渠道连通性。</p></div><button class="button secondary" data-action="channels">刷新渠道</button></div><pre id="channels-output" class="output">点击刷新读取渠道状态。</pre></section></section>
-<section class="view" data-page="security"><section class="panel"><div class="panel-head"><div><h2>安全</h2><p>本地边界和 Gateway 所有权状态。</p></div></div><dl class="info-list"><div class="info-row"><dt>监听范围</dt><dd>127.0.0.1</dd></div><div class="info-row"><dt>页面令牌</dt><dd>仅 URL fragment</dd></div><div class="info-row"><dt>外部 Gateway</dt><dd>停止前需要确认</dd></div><div class="info-row"><dt>凭据存储</dt><dd>不由 LongHub 保存</dd></div></dl></section></section>
-<section class="view" data-page="memory"><section class="panel"><div class="panel-head"><div><h2>记忆</h2><p>工作区记忆文件由 OpenClaw 管理，LongHub 不复制或上传内容。</p></div></div><div class="notice">文件编辑器将在本地工作区读写边界完成后开放。当前可通过配置备份保护原生配置。</div><div class="actions" style="margin-top:15px"><button class="button secondary" data-view-jump="backups">打开配置备份</button></div></section></section>
-<section class="view" data-page="cron"><section class="panel"><div class="panel-head"><div><h2>定时任务</h2><p>读取 OpenClaw 固定 CLI 的任务清单。</p></div><button class="button secondary" data-action="cron">刷新任务</button></div><pre id="cron-output" class="output">点击刷新读取定时任务。</pre></section></section>
-<section class="view" data-page="usage"><section class="panel"><div class="panel-head"><div><h2>用量</h2><p>当前版本暂不收集云端用量，也不会读取云端凭据。</p></div></div><div class="notice">LongHub 只管理本机运行环境。需要用量统计时，将从 OpenClaw 本地日志或 Gateway API 增加明确的数据边界。</div></section></section>
-<section class="view" data-page="skills"><section class="panel"><div class="panel-head"><div><h2>Skills</h2><p>查看本机 Skills 的就绪状态、说明和来源。</p></div><button class="button secondary" data-action="skills">刷新 Skills</button></div><div class="skills-summary" aria-label="Skills 汇总"><div class="skill-metric"><strong id="skills-ready" class="skill-metric-value">--</strong><span class="skill-metric-label">可用</span></div><div class="skill-metric"><strong id="skills-setup" class="skill-metric-value">--</strong><span class="skill-metric-label">需配置</span></div><div class="skill-metric"><strong id="skills-disabled" class="skill-metric-value">--</strong><span class="skill-metric-label">已禁用</span></div><div class="skill-metric"><strong id="skills-total" class="skill-metric-value">--</strong><span class="skill-metric-label">总计</span></div></div><div class="skills-controls"><input id="skills-search" type="search" placeholder="搜索名称、说明或来源" aria-label="搜索 Skills"><select id="skills-status-filter" aria-label="按状态筛选"><option value="">全部状态</option><option value="ready">可用</option><option value="needs_setup">需配置</option><option value="disabled">已禁用</option><option value="unknown">其他状态</option></select><select id="skills-source-filter" aria-label="按来源筛选"><option value="">全部来源</option></select></div><div class="skills-result-line"><span id="skills-result-count">尚未读取</span><span id="skills-ready-ratio">--</span></div><div id="skills-state" class="skills-state">点击刷新读取 Skills。</div><div id="skills-table" class="table-wrap skills-table" hidden><table><thead><tr><th>状态</th><th>Skill</th><th>说明</th><th>来源</th></tr></thead><tbody id="skills-body"></tbody></table></div><p id="skills-hint" class="skills-hint" hidden></p></section></section>
-<section class="view" data-page="extensions"><section class="panel"><div class="panel-head"><div><h2>插件</h2><p>插件安装和开关需要独立的审核边界。</p></div></div><div class="notice">当前版本不自动安装第三方插件，也不会把插件包混入 LongHub Manager 安装包。</div></section></section>
-<section class="view" data-page="settings"><section class="panel"><div class="panel-head"><div><h2>设置</h2><p>Manager 的本地运行选项。</p></div></div><dl class="info-list"><div class="info-row"><dt>主题</dt><dd><button class="button secondary" id="settings-theme">切换浅色 / 深色</button></dd></div><div class="info-row"><dt>配置备份</dt><dd><button class="button secondary" data-view-jump="backups">管理备份</button></dd></div><div class="info-row"><dt>版本更新</dt><dd><button class="button secondary" data-view-jump="updates">查看版本</button></dd></div></dl></section></section>
-<section class="view" data-page="diagnostics"><section class="panel"><div class="panel-head"><div><h2>检查与修复</h2><p>收集本机运行信息，便于定位安装、Gateway 和 Skills 问题。</p></div></div><div class="actions"><button class="button" data-action="doctor">运行 Doctor</button><button class="button secondary" data-action="skills">检查 Skills</button><button class="button secondary" data-action="health">健康检查</button></div><pre id="diagnostic-output" class="output">--</pre></section></section>
-<section class="view" data-page="backups"><section class="panel"><div class="panel-head"><div><h2>配置备份</h2><p>为当前 OpenClaw 配置创建可恢复快照。</p></div><div class="actions"><button id="backups" class="button secondary">刷新列表</button><button id="backup" class="button">创建备份</button></div></div><div id="backup-output" class="output">正在读取备份列表…</div></section></section>
-<section class="view" data-page="updates"><section class="panel"><div class="panel-head"><div><h2>版本更新</h2><p>仅接受 LongHub 签名的 Manager 更新包。</p></div><button id="update-status" class="button secondary">检查更新</button></div><div class="actions"><button id="update-download" class="button blue">下载更新</button><button id="update-apply" class="button danger">安装更新</button></div><pre id="update-output" class="output">--</pre></section></section>
-<section class="view" data-page="about"><section class="panel"><div class="panel-head"><div><h2>关于 LongHub Manager</h2><p>本地 OpenClaw 管理工作台。</p></div></div><dl class="info-list"><div class="info-row"><dt>产品</dt><dd>LongHub Manager</dd></div><div class="info-row"><dt>运行方式</dt><dd>Windows WebView2 + loopback API</dd></div><div class="info-row"><dt>数据边界</dt><dd>本机 OpenClaw</dd></div><div class="info-row"><dt>版本更新</dt><dd><button class="button secondary" data-view-jump="updates">检查更新</button></dd></div></dl></section></section>
-</main></div>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand"><div class="logo">L</div><div><strong>LongHub</strong><small>OpenClaw Manager</small></div></div>
+    <div class="label">核心</div>
+    <nav class="nav">
+      <button class="active" data-view="overview" aria-label="首页"><i>⌂</i><span>首页</span></button>
+      <button data-view="assistant" aria-label="管家 Agent"><i>✦</i><span>管家 Agent</span></button>
+      <button data-view="services" aria-label="服务管理"><i>◉</i><span>服务管理</span></button>
+    </nav>
+    <div class="label">维护</div>
+    <nav class="nav">
+      <button data-view="install" aria-label="OpenClaw 安装"><i>⇩</i><span>OpenClaw 安装</span></button>
+      <button data-view="diagnostics" aria-label="检查与修复"><i>⌕</i><span>检查与修复</span></button>
+      <button data-view="backups" aria-label="配置备份"><i>◫</i><span>配置备份</span></button>
+    </nav>
+    <div class="label">Manager</div>
+    <nav class="nav">
+      <button data-view="settings" aria-label="设置"><i>⚙</i><span>设置</span></button>
+      <button data-view="about" aria-label="关于"><i>ⓘ</i><span>关于</span></button>
+    </nav>
+    <div class="footer"><strong>LongHub Manager</strong><br>本机控制 · 模型由你配置</div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <strong id="crumb">首页</strong>
+      <div class="connection"><span class="dot" id="connection-dot"></span><span id="connection-text">正在连接本地服务</span></div>
+    </header>
+    <div class="content">
+      <div class="head"><h1 id="title">首页</h1><p id="subtitle">OpenClaw 状态与 LongHub 维护入口</p></div>
+
+      <section class="view active" data-page="overview">
+        <div class="grid stats">
+          <article class="stat"><label>Gateway</label><div class="value" id="gateway-state">检测中</div><div class="note truncate" id="gateway-detail">正在读取服务状态</div></article>
+          <article class="stat"><label>OpenClaw 版本</label><div class="value" id="runtime-version">--</div><div class="note truncate" id="runtime-note">等待检测</div></article>
+          <article class="stat"><label>Node.js</label><div class="value" id="node-version">--</div><div class="note truncate" id="node-note">等待兼容性检查</div></article>
+          <article class="stat"><label>配置备份</label><div class="value" id="backup-count">--</div><div class="note">可恢复快照</div></article>
+        </div>
+        <div class="grid cols">
+          <article class="card">
+            <div class="card-head"><div><h2>OpenClaw</h2><p>模型、Agent、渠道、会话、自动化、记忆、Skills 和插件使用 OpenClaw 自带界面管理</p></div></div>
+            <div class="status"><div class="status-icon" id="status-icon">●</div><div><strong id="status-title">正在检查</strong><span class="note" id="status-detail">请稍候</span></div></div>
+            <div class="actions"><button class="btn" id="open-dashboard">打开 OpenClaw</button><button class="btn secondary" id="overview-refresh">刷新状态</button></div>
+            <div class="operation data-state" id="overview-operation"><div class="empty">该界面由 OpenClaw 自己提供，LongHub 不复制其中的管理功能。</div></div>
+          </article>
+          <article class="card">
+            <div class="card-head"><div><h2>本机环境</h2><p>用户自己的原生安装</p></div></div>
+            <dl class="info"><div><dt>安装状态</dt><dd id="install-state">检测中</dd></div><div><dt>本地 API</dt><dd id="api-state">连接中</dd></div><div><dt>最近检查</dt><dd id="last-check">--</dd></div><div><dt>运行边界</dt><dd>127.0.0.1</dd></div></dl>
+          </article>
+        </div>
+        <article class="card">
+          <div class="card-head"><div><h2>LongHub 能做什么</h2><p>保留独立管家、服务控制与可恢复维护，不重复 OpenClaw 的日常管理界面</p></div></div>
+          <div class="quick">
+            <button data-jump="assistant"><strong>✦ 管家 Agent</strong><span>完整诊断与受控操作</span></button>
+            <button data-jump="services"><strong>◉ 服务管理</strong><span>Gateway 生命周期与自动启动</span></button>
+            <button data-jump="diagnostics"><strong>⌕ 检查与修复</strong><span>修复前备份，失败自动回滚</span></button>
+            <button data-jump="backups"><strong>◫ 配置备份</strong><span>创建、校验与恢复快照</span></button>
+          </div>
+        </article>
+      </section>
+
+      <section class="view" data-page="assistant">
+        <div class="assistant-hero">
+          <h2>LongHub 管家 Agent</h2>
+          <p>它独立于 OpenClaw Gateway 运行，会先检查再行动；对话和脱敏工具结果会发送到你配置的模型，任何修改都必须由你确认。</p>
+          <div class="agent-prompts">
+            <button data-agent-prompt="全面检查 OpenClaw 安装、Gateway、配置和安全状态，告诉我最需要处理的问题。"><strong>全面体检</strong><span>检查整体健康</span></button>
+            <button data-agent-prompt="检查 Gateway 为什么不能正常运行，先诊断，不要直接修改。"><strong>Gateway 排障</strong><span>定位启动问题</span></button>
+            <button data-agent-prompt="检查模型、Agent 和消息渠道的当前配置，找出异常。"><strong>配置检查</strong><span>模型、Agent 与渠道</span></button>
+            <button data-agent-prompt="运行只读诊断，根据结果给出修复建议；需要修改时先请求我的确认。"><strong>安全修复</strong><span>先诊断后确认</span></button>
+          </div>
+        </div>
+
+        <details class="agent-settings" id="agent-settings">
+          <summary><span>管家模型设置</span><span class="badge" id="agent-config-state">正在检查</span></summary>
+          <div class="settings-body">
+            <div class="form-grid">
+              <div class="field"><label for="agent-base-url">OpenAI 兼容地址</label><input id="agent-base-url" type="url" placeholder="https://api.openai.com/v1"><small>必须使用 HTTPS；本机 127.0.0.1 可使用 HTTP。</small></div>
+              <div class="field"><label for="agent-model">模型</label><input id="agent-model" placeholder="模型 ID"><small>建议选择支持工具调用的模型。</small></div>
+              <div class="field"><label for="agent-protocol">API 协议</label><select id="agent-protocol"><option value="auto">自动识别</option><option value="responses">Responses API</option><option value="chat_completions">Chat Completions</option></select><small>Codex 地址自动使用 Responses。</small></div>
+              <div class="field"><label for="agent-api-key">API Key</label><input id="agent-api-key" type="password" autocomplete="new-password" placeholder="留空则保留现有 Key"><small>Windows 下保存在系统凭据管理器，不写入配置文件。</small></div>
+            </div>
+            <div class="actions" style="margin-top:14px"><button class="btn" id="agent-config-save">保存并测试</button><button class="btn secondary" id="agent-config-test">测试已保存配置</button><button class="btn danger" id="agent-config-delete">清除设置</button></div>
+          </div>
+        </details>
+
+        <article class="card chat-card">
+          <div class="chat-head"><div><h2>本机运维对话</h2><span class="note">固定工具白名单 · 写操作逐次确认</span></div><button class="btn secondary" id="agent-new-session">新对话</button></div>
+          <div class="messages" id="agent-messages"></div>
+          <div class="agent-steps" id="agent-steps"></div>
+          <div class="approval" id="agent-approval" hidden>
+            <strong id="approval-title">需要你的确认</strong><p id="approval-summary"></p>
+            <details class="nested"><summary>查看工具参数</summary><pre id="approval-args"></pre></details>
+            <div class="actions" style="margin-top:10px"><button class="btn" id="approval-accept">确认执行</button><button class="btn secondary" id="approval-deny">拒绝</button></div>
+          </div>
+          <div class="composer">
+            <div class="composer-row"><textarea id="agent-input" maxlength="8192" placeholder="例如：检查为什么 Gateway 启动失败"></textarea><button class="btn" id="agent-send">发送</button></div>
+            <small>Enter 发送，Shift + Enter 换行。管家不会索要或显示密钥。</small>
+          </div>
+        </article>
+      </section>
+
+      <section class="view" data-page="services">
+        <article class="card">
+          <div class="card-head"><div><h2>OpenClaw Gateway</h2><p>生命周期、健康和 Windows 自动启动</p></div></div>
+          <div class="actions">
+            <button class="btn" data-control="start">启动</button><button class="btn secondary" data-control="restart">重启</button><button class="btn danger" data-control="stop">停止</button>
+            <button class="btn secondary" data-control="health">健康检查</button><button class="btn secondary" data-control="task-status">启动任务状态</button>
+            <button class="btn" data-control="enroll-task">启用自动启动</button><button class="btn danger" data-control="remove-task">取消自动启动</button>
+          </div>
+          <div class="operation data-state" id="services-operation"><div class="empty">选择操作以查看结果。</div></div>
+        </article>
+      </section>
+
+      <section class="view" data-page="install">
+        <article class="card">
+          <div class="card-head"><div><h2>OpenClaw 安装与更新</h2><p>预检后安装固定审核版本，不接管用户目录</p></div></div>
+          <div class="actions"><button class="btn secondary" id="preflight">运行安装预检</button><button class="btn" id="install">安装审核版本</button></div>
+          <div class="operation data-state" id="install-operation"><div class="empty">先检查 Node.js、npm、目录权限和磁盘空间。</div></div>
+        </article>
+      </section>
+
+      <section class="view" data-page="diagnostics">
+        <article class="card inventory-card" data-auto-kind="diagnostics">
+          <div class="card-head"><div><h2>只读诊断</h2><p>检查安装、配置、Gateway、渠道和 Skills</p></div><button class="btn secondary" data-load-kind="diagnostics">重新检查</button></div>
+          <div class="data-state" id="inventory-diagnostics"><div class="loading">正在读取…</div></div>
+        </article>
+        <article class="card">
+          <div class="card-head"><div><h2>可恢复修复</h2><p>先创建恢复点，修复后验证；失败自动回滚</p></div><button class="btn danger" data-control="repair">备份并修复</button></div>
+          <div class="operation data-state" id="diagnostics-operation"><div class="empty">只有确认后才会修改配置。</div></div>
+        </article>
+      </section>
+
+      <section class="view" data-page="backups">
+        <article class="card">
+          <div class="card-head"><div><h2>配置备份</h2><p>完整性校验、恢复前安全快照和原子替换</p></div><div class="actions"><button class="btn secondary" id="backup-refresh">刷新</button><button class="btn" id="backup-create">创建备份</button></div></div>
+          <div class="data-state" id="backup-output"><div class="loading">正在读取…</div></div>
+        </article>
+      </section>
+
+      <section class="view" data-page="settings">
+        <article class="card"><div class="card-head"><div><h2>设置</h2><p>Manager 本地界面选项</p></div></div><button class="btn secondary" id="theme">切换浅色 / 深色</button></article>
+      </section>
+
+      <section class="view" data-page="about">
+        <article class="card">
+          <div class="card-head"><div><h2>LongHub Manager</h2><p>免费的本地 OpenClaw 管理工作台</p></div></div>
+          <dl class="info"><div><dt>运行方式</dt><dd>Windows WebView2</dd></div><div><dt>管家 Agent</dt><dd>独立于 Gateway</dd></div><div><dt>数据边界</dt><dd>控制面在本机；Agent 使用自配模型</dd></div><div><dt>Cloud Skill</dt><dd>独立产品</dd></div></dl>
+        </article>
+        <article class="card">
+          <div class="card-head"><div><h2>LongHub Manager 更新</h2><p>这是 Manager 自身的版本维护，只接受签名和哈希都通过验证的更新包</p></div></div>
+          <div class="actions"><button class="btn secondary" id="update-check">检查更新</button><button class="btn" id="update-download">下载</button><button class="btn danger" id="update-apply">安装更新</button></div>
+          <div class="operation data-state" id="update-operation"><div class="empty">尚未检查 Manager 更新。</div></div>
+        </article>
+      </section>
+    </div>
+  </main>
+</div>
+
 <script>
-const token=location.hash.startsWith('#token=')?decodeURIComponent(location.hash.slice(7)):'';const headers={authorization:'Bearer '+token,accept:'application/json'};const pageNames={overview:['总览','集中管理当前设备上的 OpenClaw 运行环境。'],assistant:['助手','执行受限的本地诊断动作。'],chat:['会话','本地 Gateway 会话入口。'],services:['服务','查看 Gateway 与启动任务。'],logs:['日志','查看有限的本地诊断输出。'],models:['模型','查看当前 OpenClaw 模型。'],agents:['Agent','查看当前 Agent 清单。'],gateway:['Gateway','控制本机 Gateway 生命周期。'],channels:['渠道','查看消息渠道状态。'],security:['安全','查看本地安全边界。'],memory:['记忆','查看工作区记忆边界。'],cron:['定时任务','查看固定 CLI 任务清单。'],usage:['用量','查看本地用量能力。'],skills:['Skills','查看本机 Skills。'],extensions:['插件','查看扩展边界。'],settings:['设置','管理 LongHub 本地选项。'],diagnostics:['检查与修复','运行本机诊断。'],backups:['配置备份','创建和恢复原生配置快照。'],updates:['版本更新','检查 LongHub Manager 更新。'],about:['关于','查看版本和运行方式。']};
-async function call(path,options={}){const response=await fetch(path,{...options,headers:{...headers,...(options.headers||{})}});const body=await response.json().catch(()=>({}));if(!response.ok)throw new Error(body.code||'HTTP '+response.status);return body}function show(id,value,error=false){const node=document.getElementById(id);if(!node)return;node.textContent=typeof value==='string'?value:JSON.stringify(value,null,2);node.classList.toggle('error',error)}function setConnected(value){document.getElementById('connection-dot').classList.toggle('online',value);document.getElementById('connection-text').textContent=value?'本地服务已连接':'本地服务不可用';show('service-state',value?'已连接':'离线')}function applyStatus(status){const running=Boolean(status&&status.running);const state=running?'运行中':'未运行';const detail=status&&(status.message||status.error_code)||(running?'Gateway 已发现':'Gateway 当前未启动');show('gateway-state',state);show('gateway-detail',detail);show('overview-title',state);show('overview-detail',detail);show('services-title',state);show('services-detail',detail);show('last-check',new Date().toLocaleTimeString());document.querySelectorAll('.status-ring').forEach(node=>node.classList.toggle('offline',!running));document.querySelectorAll('.status-title').forEach(node=>{if(node.textContent==='等待检查')node.textContent=state});document.querySelectorAll('.status-detail').forEach(node=>{if(node.textContent==='点击刷新获取服务状态')node.textContent=detail})}function activatePage(page){const meta=pageNames[page]||pageNames.overview;document.querySelectorAll('[data-view]').forEach(item=>item.classList.toggle('active',item.dataset.view===page));document.querySelectorAll('[data-page]').forEach(item=>item.classList.toggle('active',item.dataset.page===page));document.getElementById('page-title').textContent=meta[0];document.getElementById('page-subtitle').textContent=meta[1];if(page==='backups')loadBackups()}
-async function refreshRuntime(){try{const[runtime,gateway]=await Promise.all([call('/api/v1/runtime/status'),call('/api/v1/runtime/control',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({action:'status'})})]);const installed=runtime.state&&runtime.state!=='uninstalled';setConnected(true);show('runtime-version',runtime.version||(installed?'已安装':'未安装'));show('runtime-path',installed?'已发现本机 OpenClaw':'未发现本机 OpenClaw');show('node-version',runtime.node_version||'--');show('install-state',installed?'已安装':'未安装');applyStatus(gateway.status||gateway)}catch(error){setConnected(false);show('overview-output',error.message,true);show('runtime-version','不可用');show('install-state','需要检查')}}const outputIds={doctor:'diagnostic-output',models:'models-output',agents:'agents-output',channels:'channels-output',cron:'cron-output',status:'assistant-output',health:'diagnostic-output','task-status':'services-output'};
-let skillRecords=[];function skillStatusName(skill){if(skill.status==='ready')return'可用';if(skill.status==='needs_setup')return'需配置';if(skill.status==='disabled')return'已禁用';return skill.status_label||'其他'}function setSkillsState(message,error=false){const state=document.getElementById('skills-state');state.textContent=message;state.classList.toggle('error',error);state.hidden=false;document.getElementById('skills-table').hidden=true}function renderSkillRows(){const query=document.getElementById('skills-search').value.trim().toLowerCase();const status=document.getElementById('skills-status-filter').value;const source=document.getElementById('skills-source-filter').value;const filtered=skillRecords.filter(skill=>{const haystack=[skill.name,skill.description,skill.source,skill.status_label].join(' ').toLowerCase();return(!query||haystack.includes(query))&&(!status||skill.status===status)&&(!source||skill.source===source)});document.getElementById('skills-result-count').textContent='显示 '+filtered.length+' / '+skillRecords.length+' 项';const table=document.getElementById('skills-table');const state=document.getElementById('skills-state');if(!filtered.length){setSkillsState(skillRecords.length?'没有符合当前筛选条件的 Skill。':'未发现 Skill 记录。');return}state.hidden=true;state.classList.remove('error');table.hidden=false;document.getElementById('skills-body').innerHTML=filtered.map(skill=>'<tr><td><span class="skill-badge '+esc(skill.status||'unknown')+'">'+esc(skillStatusName(skill))+'</span></td><td><div class="skill-name">'+esc(skill.name||'--')+'</div></td><td><div class="skill-description">'+esc(skill.description||'暂无说明')+'</div></td><td><div class="skill-source">'+esc(skill.source||'--')+'</div></td></tr>').join('')}function renderSkills(body){skillRecords=Array.isArray(body.skills)?body.skills:[];const ready=skillRecords.filter(skill=>skill.status==='ready').length;const needsSetup=skillRecords.filter(skill=>skill.status==='needs_setup').length;const disabled=skillRecords.filter(skill=>skill.status==='disabled').length;const total=Number(body.summary&&body.summary.total)||skillRecords.length;const reportedReady=Number.isFinite(Number(body.summary&&body.summary.ready))?Number(body.summary.ready):ready;show('skills-ready',String(reportedReady));show('skills-setup',String(needsSetup));show('skills-disabled',String(disabled));show('skills-total',String(total));show('skills-ready-ratio',total?Math.round(reportedReady/total*100)+'% 可用':'--');const sourceSelect=document.getElementById('skills-source-filter');const selectedSource=sourceSelect.value;const sources=[...new Set(skillRecords.map(skill=>skill.source).filter(Boolean))].sort((a,b)=>a.localeCompare(b));sourceSelect.innerHTML='<option value="">全部来源</option>'+sources.map(source=>'<option value="'+esc(source)+'">'+esc(source)+'</option>').join('');sourceSelect.value=sources.includes(selectedSource)?selectedSource:'';const hint=document.getElementById('skills-hint');hint.textContent=body.hint||'';hint.hidden=!body.hint;renderSkillRows()}function renderSkillsLoading(){skillRecords=[];show('skills-result-count','正在读取');show('skills-ready-ratio','--');setSkillsState('正在读取本机 Skills，请稍候…')}function renderSkillsError(message){skillRecords=[];show('skills-result-count','读取失败');show('skills-ready-ratio','--');setSkillsState(message||'Skills 读取失败',true)}
-async function runtimeAction(action){const actionButtons=[...document.querySelectorAll('[data-action="'+action+'"]')];actionButtons.forEach(button=>button.disabled=true);if(action==='skills')renderSkillsLoading();try{const confirm=['start','stop','restart','enroll-task','remove-task'].includes(action);const body=await call('/api/v1/runtime/control',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({action,confirm})});if(action==='skills'){renderSkills(body);const summary=body.summary||{};const message='已读取 '+(summary.total??body.skills?.length??0)+' 个 Skills，其中 '+(summary.ready??0)+' 个可用。';show('assistant-output',message);show('diagnostic-output',message);return}const result=body.status||body;if(['status','health','start','stop','restart'].includes(action))applyStatus(result);show('overview-output',body);show('gateway-output',body);show('services-output',body);show('assistant-output',body.output||body);show('diagnostic-output',body.output||body);if(outputIds[action])show(outputIds[action],body.output||body);if(action==='doctor')show('logs-output',body.output||body)}catch(error){if(action==='skills')renderSkillsError(error.message);['overview-output','gateway-output','services-output','assistant-output','diagnostic-output',outputIds[action]].filter(Boolean).forEach(id=>show(id,error.message,true))}finally{actionButtons.forEach(button=>button.disabled=false)}}
-function esc(value){return String(value??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}async function loadBackups(){try{const body=await call('/api/v1/config/backups');const backups=body.backups||[];show('backup-count',String(backups.length));const node=document.getElementById('backup-output');if(!backups.length){node.textContent='暂无配置备份';return}node.classList.remove('error');node.innerHTML='<div class="table-wrap"><table><thead><tr><th>创建时间</th><th>大小</th><th>SHA-256</th><th>操作</th></tr></thead><tbody>'+backups.map(item=>'<tr><td>'+esc(item.created_at)+'</td><td>'+esc(item.bytes)+' B</td><td>'+esc(item.sha256)+'</td><td><button class="button secondary" data-restore="'+esc(item.backup_id)+'">恢复</button></td></tr>').join('')+'</tbody></table></div>';node.querySelectorAll('[data-restore]').forEach(button=>button.addEventListener('click',()=>restoreBackup(button.dataset.restore)))}catch(error){show('backup-output',error.message,true)}}async function restoreBackup(id){if(!window.confirm('恢复此配置前会先创建安全备份，继续吗？'))return;try{const body=await call('/api/v1/config/restore',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({backup_id:id})});show('backup-output',body);await loadBackups()}catch(error){show('backup-output',error.message,true)}}async function update(action){try{const options=action?{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({action,confirm:true})}:{};const body=await call('/api/v1/manager-update',options);show('update-output',body)}catch(error){show('update-output',error.message,true)}}function setTheme(dark){document.documentElement.classList.toggle('dark',dark);localStorage.setItem('longhub-theme',dark?'dark':'light')}
-document.querySelectorAll('[data-view]').forEach(button=>button.addEventListener('click',()=>activatePage(button.dataset.view)));document.querySelectorAll('[data-view-jump]').forEach(button=>button.addEventListener('click',()=>activatePage(button.dataset.viewJump)));document.querySelectorAll('[data-action]').forEach(button=>button.addEventListener('click',()=>runtimeAction(button.dataset.action)));document.getElementById('skills-search').addEventListener('input',renderSkillRows);document.getElementById('skills-status-filter').addEventListener('change',renderSkillRows);document.getElementById('skills-source-filter').addEventListener('change',renderSkillRows);document.getElementById('backup').addEventListener('click',async()=>{try{await call('/api/v1/config/backups',{method:'POST',headers:{'content-type':'application/json'},body:'{}'});await loadBackups()}catch(error){show('backup-output',error.message,true)}});document.getElementById('backups').addEventListener('click',loadBackups);document.getElementById('update-status').addEventListener('click',()=>update(''));document.getElementById('update-download').addEventListener('click',()=>update('download'));document.getElementById('update-apply').addEventListener('click',()=>update('apply'));document.getElementById('sidebar-toggle').addEventListener('click',()=>{const sidebar=document.getElementById('sidebar');sidebar.classList.toggle('collapsed');localStorage.setItem('longhub-sidebar',sidebar.classList.contains('collapsed')?'1':'0')});document.getElementById('theme-toggle').addEventListener('click',()=>setTheme(!document.documentElement.classList.contains('dark')));document.getElementById('settings-theme').addEventListener('click',()=>setTheme(!document.documentElement.classList.contains('dark')));document.getElementById('log-filter').addEventListener('input',event=>{const value=event.target.value.toLowerCase();const node=document.getElementById('logs-output');node.textContent=node.textContent.split('\n').filter(line=>!value||line.toLowerCase().includes(value)).join('\n')});setTheme(localStorage.getItem('longhub-theme')==='dark');if(localStorage.getItem('longhub-sidebar')==='1')document.getElementById('sidebar').classList.add('collapsed');refreshRuntime();loadBackups();
+  const token = location.hash.startsWith("#token=") ? decodeURIComponent(location.hash.slice(7)) : "";
+  const headers = { authorization: "Bearer " + token, accept: "application/json" };
+  const pages = {
+    overview: ["首页", "OpenClaw 状态与 LongHub 维护入口"],
+    assistant: ["管家 Agent", "独立于 Gateway 的诊断与受控修复"],
+    services: ["服务管理", "Gateway 生命周期和 Windows 自动启动"],
+    install: ["OpenClaw 安装与更新", "安装和维护外部 OpenClaw 运行核心"],
+    diagnostics: ["检查与修复", "只读诊断与可恢复修复"],
+    backups: ["配置备份", "创建、校验并恢复配置快照"],
+    settings: ["设置", "Manager 本地界面选项"],
+    about: ["关于 LongHub Manager", "产品信息、数据边界与 Manager 自身更新"]
+  };
+  const labels = {
+    state: "状态", status: "状态", enabled: "已启用", disabled: "已禁用", ready: "就绪",
+    id: "ID", name: "名称", display_name: "显示名称", description: "说明", version: "版本",
+    model: "模型", default_model: "默认模型", provider: "Provider", providers: "Providers",
+    agents: "Agents", agent: "Agent", channels: "渠道", channel: "渠道", accounts: "账户",
+    bindings: "绑定", workspace: "工作区", agent_dir: "Agent 目录", identity: "身份",
+    jobs: "任务", schedule: "调度", next_run_at: "下次运行", last_run_at: "上次运行",
+    created_at: "创建时间", updated_at: "更新时间", last_used_at: "最近使用",
+    total: "总数", count: "数量", running: "运行中", installed: "已安装", managed: "Manager 管理",
+    health: "健康状态", error: "错误", error_code: "错误代码", message: "消息",
+    source: "来源", path: "路径", config: "配置", configured: "已配置",
+    usage: "用量", sessions: "会话", memory: "记忆", skills: "Skills", plugins: "插件",
+    bytes: "字节", sha256: "SHA-256", backup_id: "备份 ID", schema_version: "数据版本",
+    node_version: "Node.js 版本", node_compatible: "Node.js 兼容", openclaw_version: "OpenClaw 版本",
+    free_bytes: "可用空间", min_free_bytes: "所需空间", npm_found: "发现 npm",
+    npm_prefix_writable: "npm 目录可写", config_present: "存在配置", config_readable: "配置可读",
+    workspace_present: "存在工作区", workspace_readable: "工作区可读"
+  };
+  const errorLabels = {
+    MANAGER_AUTH_REQUIRED: "本地管理令牌无效，请从托盘重新打开 Manager。",
+    MANAGER_AGENT_NOT_CONFIGURED: "管家 Agent 暂不可用。",
+    MANAGER_AGENT_CONFIG_UNAVAILABLE: "无法读取管家模型设置。",
+    INVALID_AGENT_CONFIG: "模型设置无效。请检查地址、模型和 API Key。",
+    MANAGER_AGENT_CONNECTION_FAILED: "管家模型连接测试失败。",
+    MANAGER_AGENT_TURN_FAILED: "管家模型调用失败。请检查兼容地址、模型、API Key 和网络。",
+    MANAGER_AGENT_APPROVAL_FAILED: "确认操作失败或已经过期。",
+    OPENCLAW_INVENTORY_FAILED: "OpenClaw 未返回可用的结构化数据。",
+    OPENCLAW_REPAIR_VALIDATION_FAILED: "修复后的配置未通过验证，已自动恢复。",
+    OPENCLAW_REPAIR_ROLLBACK_FAILED: "修复失败且自动恢复未完成，请立即使用配置备份。",
+    OPENCLAW_MANAGEMENT_FAILED: "OpenClaw 管理操作失败，未确认成功修改。",
+    OPENCLAW_CONFIG_MUTATION_VALIDATION_FAILED: "修改后的配置未通过验证，已自动恢复。",
+    OPENCLAW_CONFIG_MUTATION_ROLLBACK_FAILED: "配置修改失败且自动恢复未完成，请立即使用配置备份。",
+    CONFIG_BACKUP_NOT_CONFIGURED: "配置备份在当前环境不可用。",
+    NATIVE_CONFIG_NOT_FOUND: "尚未找到 OpenClaw 配置文件。",
+    OPENCLAW_DASHBOARD_FAILED: "无法打开 OpenClaw，请先确认 OpenClaw 已安装且 Gateway 配置有效。",
+    MANAGER_UPDATE_NOT_CONFIGURED: "当前构建未配置签名更新服务。"
+  };
+
+  let currentPage = "overview";
+  let agentConfigured = false;
+  let agentSession = "";
+  let pendingApproval = null;
+  let agentBusy = false;
+
+  async function call(path, options = {}) {
+    const response = await fetch(path, { ...options, headers: { ...headers, ...(options.headers || {}) } });
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const code = body.code || "HTTP_" + response.status;
+      const error = new Error(body.message || errorLabels[code] || code);
+      error.body = body;
+      error.status = response.status;
+      throw error;
+    }
+    return body;
+  }
+
+  function text(id, value) {
+    const node = document.getElementById(id);
+    if (node) node.textContent = value == null ? "" : String(value);
+  }
+
+  function el(tag, className, content) {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (content != null) node.textContent = String(content);
+    return node;
+  }
+
+  function labelFor(key) {
+    const normalized = String(key).replace(/([a-z0-9])([A-Z])/g, "$1_$2").toLowerCase();
+    if (labels[normalized]) return labels[normalized];
+    return normalized.split("_").map(part => part ? part[0].toUpperCase() + part.slice(1) : "").join(" ");
+  }
+
+  function primitiveNode(value) {
+    if (value === null || value === undefined || value === "") return el("span", "note", "—");
+    if (typeof value === "boolean") return el("span", "pill " + (value ? "good" : "bad"), value ? "是" : "否");
+    const normalized = String(value);
+    const lower = normalized.toLowerCase();
+    let className = "pill";
+    if (["ready", "ok", "healthy", "running", "connected", "active", "success", "enabled"].includes(lower)) className += " good";
+    if (["error", "failed", "unhealthy", "stopped", "offline", "disabled", "missing"].includes(lower)) className += " bad";
+    if (["warning", "needs_setup", "degraded", "unknown"].includes(lower)) className += " warn";
+    return el("span", className, normalized);
+  }
+
+  function compactValue(value) {
+    if (value === null || value === undefined || value === "") return "—";
+    if (typeof value === "boolean") return value ? "是" : "否";
+    if (typeof value !== "object") return String(value);
+    if (Array.isArray(value)) return value.map(compactValue).join("、");
+    return Object.entries(value).slice(0, 4).map(([key, item]) => labelFor(key) + ": " + compactValue(item)).join("；");
+  }
+
+  function renderArray(value, depth) {
+    if (!value.length) return el("div", "empty", "暂无数据。");
+    const objects = value.every(item => item && typeof item === "object" && !Array.isArray(item));
+    if (objects) {
+      const columns = [];
+      for (const item of value.slice(0, 30)) {
+        for (const key of Object.keys(item)) {
+          if (!columns.includes(key) && columns.length < 9) columns.push(key);
+        }
+      }
+      if (columns.length) {
+        const wrap = el("div", "table-wrap");
+        const table = document.createElement("table");
+        const thead = document.createElement("thead");
+        const header = document.createElement("tr");
+        columns.forEach(key => header.append(el("th", "", labelFor(key))));
+        thead.append(header);
+        const tbody = document.createElement("tbody");
+        value.forEach(item => {
+          const row = document.createElement("tr");
+          columns.forEach(key => {
+            const cell = document.createElement("td");
+            const cellValue = item[key];
+            if (cellValue && typeof cellValue === "object") cell.append(el("span", "note", compactValue(cellValue)));
+            else cell.append(primitiveNode(cellValue));
+            row.append(cell);
+          });
+          tbody.append(row);
+        });
+        table.append(thead, tbody);
+        wrap.append(table);
+        return wrap;
+      }
+    }
+    const grid = el("div", "record-grid");
+    value.forEach((item, index) => {
+      const record = el("div", "record");
+      if (typeof item === "object" && item !== null) record.append(renderValue(item, depth + 1));
+      else record.append(el("strong", "", String(index + 1) + ". "), primitiveNode(item));
+      grid.append(record);
+    });
+    return grid;
+  }
+
+  function renderObject(value, depth) {
+    const entries = Object.entries(value);
+    if (!entries.length) return el("div", "empty", "暂无数据。");
+	const primaryArrays = new Set(["models", "agents", "jobs", "plugins", "skills", "sessions", "channels", "accounts", "items", "findings"]);
+	const primary = depth <= 1 ? entries.find(([key, item]) => primaryArrays.has(String(key).toLowerCase()) && Array.isArray(item) && item.length) : null;
+	if (primary) {
+	  const container = document.createElement("div");
+	  const metadata = Object.fromEntries(entries.filter(([key]) => key !== primary[0]));
+	  if (Object.keys(metadata).length) container.append(renderObject(metadata, depth + 1));
+	  const heading = el("h3", "", labelFor(primary[0]));
+	  heading.style.margin = "16px 0 9px";
+	  container.append(heading, renderArray(primary[1], depth + 1));
+	  return container;
+	}
+    const list = el("dl", "kv");
+    entries.forEach(([key, item]) => {
+      const row = document.createElement("div");
+      row.append(el("dt", "", labelFor(key)));
+      const description = document.createElement("dd");
+      if (item && typeof item === "object") {
+        const details = el("details", "nested");
+        const size = Array.isArray(item) ? item.length + " 项" : Object.keys(item).length + " 个字段";
+        details.append(el("summary", "", size));
+        const content = document.createElement("div");
+        content.append(renderValue(item, depth + 1));
+        details.append(content);
+        description.append(details);
+      } else {
+        description.append(primitiveNode(item));
+      }
+      row.append(description);
+      list.append(row);
+    });
+    return list;
+  }
+
+  function renderValue(value, depth = 0) {
+    if (depth > 6) return el("span", "note", compactValue(value));
+    if (Array.isArray(value)) return renderArray(value, depth);
+    if (value && typeof value === "object") return renderObject(value, depth);
+    return primitiveNode(value);
+  }
+
+  function renderInto(target, value) {
+    const node = typeof target === "string" ? document.getElementById(target) : target;
+    if (!node) return;
+    node.replaceChildren(renderValue(value));
+  }
+
+  function renderError(target, error) {
+    const node = typeof target === "string" ? document.getElementById(target) : target;
+    if (!node) return;
+    node.replaceChildren(el("div", "error-state", error.message || "操作失败"));
+  }
+
+  function setLoading(target, message = "正在读取…") {
+    const node = typeof target === "string" ? document.getElementById(target) : target;
+    if (node) node.replaceChildren(el("div", "loading", message));
+  }
+
+  function activate(page) {
+    if (!pages[page]) return;
+    currentPage = page;
+    document.querySelectorAll("[data-view]").forEach(node => node.classList.toggle("active", node.dataset.view === page));
+    document.querySelectorAll("[data-page]").forEach(node => node.classList.toggle("active", node.dataset.page === page));
+    text("crumb", pages[page][0]);
+    text("title", pages[page][0]);
+    text("subtitle", pages[page][1]);
+    const view = document.querySelector('[data-page="' + page + '"]');
+    if (view) view.querySelectorAll("[data-auto-kind]").forEach(card => loadInventory(card.dataset.autoKind));
+    if (page === "backups") loadBackups();
+    if (page === "assistant") loadAgentConfig();
+  }
+
+  async function loadInventory(kind) {
+    const target = document.getElementById("inventory-" + kind);
+    if (!target) return;
+    setLoading(target);
+    try {
+      const response = await call("/api/v1/inventory/" + encodeURIComponent(kind));
+      renderInto(target, response.data);
+    } catch (error) {
+      renderError(target, error);
+    }
+  }
+
+  function applyStatus(status) {
+    status = status.status || status;
+    const running = Boolean(status.running);
+    const title = running ? "运行中" : status.installed ? "已停止" : "未安装";
+    const detail = status.message || status.error_code || "等待操作";
+    text("gateway-state", title);
+    text("gateway-detail", detail);
+    text("status-title", title);
+    text("status-detail", detail);
+    text("last-check", new Date().toLocaleTimeString());
+    const statusIcon = document.getElementById("status-icon");
+    if (statusIcon) statusIcon.classList.toggle("offline", !running);
+  }
+
+  async function refreshOverview() {
+    try {
+      const [runtimeStatus, gatewayStatus] = await Promise.all([
+        call("/api/v1/runtime/status"),
+        call("/api/v1/runtime/control", {
+          method: "POST", headers: { "content-type": "application/json" },
+          body: JSON.stringify({ action: "status", confirm: false })
+        })
+      ]);
+      document.getElementById("connection-dot").classList.add("online");
+      text("connection-text", "本地服务已连接");
+      text("api-state", "已连接");
+      text("runtime-version", runtimeStatus.version || "未安装");
+      text("runtime-note", runtimeStatus.message || "");
+      text("node-version", runtimeStatus.node_version || "--");
+      text("node-note", runtimeStatus.node_compatible ? "版本兼容" : "需要检查");
+      text("install-state", runtimeStatus.state === "uninstalled" ? "未安装" : "已安装");
+      applyStatus(gatewayStatus);
+    } catch (error) {
+      document.getElementById("connection-dot").classList.remove("online");
+      text("connection-text", "本地服务不可用");
+      text("api-state", "离线");
+      renderError("overview-operation", error);
+    }
+  }
+
+  function operationTarget() {
+    if (currentPage === "services") return "services-operation";
+    if (currentPage === "diagnostics") return "diagnostics-operation";
+    return "overview-operation";
+  }
+
+  async function control(action, button) {
+    const confirmedActions = ["start", "stop", "restart", "enroll-task", "remove-task", "repair"];
+    const prompts = {
+      start: "启动本机 OpenClaw Gateway？",
+      stop: "停止由 LongHub 管理的 Gateway？",
+      restart: "重启由 LongHub 管理的 Gateway？",
+      "enroll-task": "启用 Windows 登录后自动启动 Gateway？",
+      "remove-task": "取消 LongHub 创建的 Gateway 自动启动任务？",
+      repair: "将先创建恢复点，再运行修复并验证配置；验证失败会自动回滚。继续吗？"
+    };
+    if (confirmedActions.includes(action) && !confirm(prompts[action])) return;
+    const target = operationTarget();
+    if (button) button.disabled = true;
+    setLoading(target, "正在执行…");
+    try {
+      const response = await call("/api/v1/runtime/control", {
+        method: "POST", headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action, confirm: confirmedActions.includes(action) })
+      });
+      if (action === "dashboard") {
+        document.getElementById(target).replaceChildren(el("div", "empty", "已交给 OpenClaw 打开自带管理界面。"));
+      } else {
+        renderInto(target, response);
+      }
+      if (["status", "health", "start", "stop", "restart"].includes(action)) applyStatus(response);
+      if (["start", "stop", "restart", "repair"].includes(action)) await refreshOverview();
+      if (action === "repair") loadInventory("diagnostics");
+    } catch (error) {
+      if (error.body && Object.keys(error.body).length > 1) renderInto(target, error.body);
+      else renderError(target, error);
+    } finally {
+      if (button) button.disabled = false;
+    }
+  }
+
+  function appendMessage(role, content) {
+    const messages = document.getElementById("agent-messages");
+    const row = el("div", "message " + role);
+    row.append(el("div", "avatar", role === "user" ? "你" : "L"), el("div", "bubble", content));
+    messages.append(row);
+    messages.scrollTop = messages.scrollHeight;
+  }
+
+  function resetAgentMessages() {
+    const messages = document.getElementById("agent-messages");
+    messages.replaceChildren();
+    appendMessage("assistant", "你好，我是 LongHub 管家。我可以检查 OpenClaw、解释问题，并通过固定工具执行经过你确认的修复。");
+    document.getElementById("agent-steps").replaceChildren();
+    hideApproval();
+  }
+
+  function setAgentBusy(busy) {
+    agentBusy = busy;
+    document.getElementById("agent-send").disabled = busy || !agentConfigured || Boolean(pendingApproval);
+    document.getElementById("agent-input").disabled = busy || !agentConfigured || Boolean(pendingApproval);
+    document.querySelectorAll("[data-agent-prompt]").forEach(button => button.disabled = busy || !agentConfigured || Boolean(pendingApproval));
+  }
+
+  function setAgentConfigState(label, state = "") {
+    text("agent-config-state", label);
+    document.getElementById("agent-config-state").className = "badge" + (state ? " " + state : "");
+  }
+
+  async function loadAgentConfig() {
+    try {
+      const config = await call("/api/v1/agent/config");
+      agentConfigured = Boolean(config.configured);
+      setAgentConfigState(agentConfigured ? "已保存" : "需要设置", agentConfigured ? "good" : "");
+      document.getElementById("agent-base-url").value = config.base_url || "";
+      document.getElementById("agent-model").value = config.model || "";
+      document.getElementById("agent-protocol").value = config.protocol || "auto";
+      document.getElementById("agent-api-key").value = "";
+      if (!agentConfigured) document.getElementById("agent-settings").open = true;
+      setAgentBusy(false);
+    } catch (error) {
+      agentConfigured = false;
+      setAgentConfigState("不可用", "bad");
+      setAgentBusy(false);
+    }
+  }
+
+  async function testAgentConnection(fromSave = false) {
+    const testButton = document.getElementById("agent-config-test");
+    testButton.disabled = true;
+    setAgentConfigState("正在测试");
+    try {
+      const result = await call("/api/v1/agent/config/test", { method: "POST" });
+      setAgentConfigState("连接正常", "good");
+      appendMessage("system", result.message || "管家模型连接正常。");
+      if (fromSave) document.getElementById("agent-settings").open = false;
+      return true;
+    } catch (error) {
+      setAgentConfigState("连接失败", "bad");
+      document.getElementById("agent-settings").open = true;
+      appendMessage("system", (fromSave ? "设置已保存，但连接失败：" : "连接失败：") + error.message);
+      return false;
+    } finally {
+      testButton.disabled = false;
+    }
+  }
+
+  async function saveAgentConfig() {
+    const button = document.getElementById("agent-config-save");
+    button.disabled = true;
+    try {
+      const config = await call("/api/v1/agent/config", {
+        method: "PUT", headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          base_url: document.getElementById("agent-base-url").value,
+          model: document.getElementById("agent-model").value,
+          protocol: document.getElementById("agent-protocol").value,
+          api_key: document.getElementById("agent-api-key").value
+        })
+      });
+      agentConfigured = Boolean(config.configured);
+      document.getElementById("agent-api-key").value = "";
+      setAgentBusy(false);
+      await testAgentConnection(true);
+    } catch (error) {
+      setAgentConfigState("保存失败", "bad");
+      appendMessage("system", error.message);
+    } finally {
+      button.disabled = false;
+    }
+  }
+
+  async function deleteAgentConfig() {
+    if (!confirm("清除管家模型地址、模型和系统凭据中的 API Key？")) return;
+    try {
+      await call("/api/v1/agent/config", { method: "DELETE" });
+      agentConfigured = false;
+      agentSession = "";
+      setAgentConfigState("需要设置");
+      document.getElementById("agent-settings").open = true;
+      resetAgentMessages();
+      setAgentBusy(false);
+    } catch (error) {
+      appendMessage("system", error.message);
+    }
+  }
+
+  function renderAgentSteps(steps) {
+    const target = document.getElementById("agent-steps");
+    (steps || []).forEach(step => {
+      const node = el("span", "step" + (step.success ? "" : " failed"), (step.success ? "✓ " : "× ") + (step.summary || step.tool));
+      target.append(node);
+    });
+  }
+
+  function showApproval(approval) {
+    pendingApproval = approval;
+    const panel = document.getElementById("agent-approval");
+    panel.hidden = false;
+    text("approval-title", "需要确认：" + approval.tool);
+    text("approval-summary", approval.summary);
+    try { text("approval-args", JSON.stringify(approval.args, null, 2)); }
+    catch (_) { text("approval-args", "{}"); }
+    setAgentBusy(false);
+  }
+
+  function hideApproval() {
+    pendingApproval = null;
+    document.getElementById("agent-approval").hidden = true;
+    setAgentBusy(false);
+  }
+
+  function handleAgentResponse(response) {
+    if (response.session_id) agentSession = response.session_id;
+    renderAgentSteps(response.steps);
+    if (response.approval) {
+      showApproval(response.approval);
+      appendMessage("system", "管家请求执行一项会修改本机状态的操作，请确认或拒绝。");
+      return;
+    }
+    hideApproval();
+    if (response.reply) appendMessage("assistant", response.reply);
+  }
+
+  async function sendAgent(message) {
+    message = String(message || "").trim();
+    if (!message || agentBusy || pendingApproval) return;
+    if (!agentConfigured) {
+      document.getElementById("agent-settings").open = true;
+      appendMessage("system", "请先配置支持工具调用的管家模型。");
+      return;
+    }
+    appendMessage("user", message);
+    document.getElementById("agent-input").value = "";
+    setAgentBusy(true);
+    try {
+      const response = await call("/api/v1/agent/turn", {
+        method: "POST", headers: { "content-type": "application/json" },
+        body: JSON.stringify({ session_id: agentSession, message })
+      });
+      handleAgentResponse(response);
+    } catch (error) {
+      appendMessage("system", error.message);
+    } finally {
+      setAgentBusy(false);
+    }
+  }
+
+  async function resolveApproval(approved) {
+    if (!pendingApproval || agentBusy) return;
+    const approval = pendingApproval;
+    setAgentBusy(true);
+    document.getElementById("approval-accept").disabled = true;
+    document.getElementById("approval-deny").disabled = true;
+    try {
+      const response = await call("/api/v1/agent/approval", {
+        method: "POST", headers: { "content-type": "application/json" },
+        body: JSON.stringify({ session_id: agentSession, approval_id: approval.id, approved })
+      });
+      hideApproval();
+      appendMessage("system", approved ? "已确认执行。" : "已拒绝执行。");
+      handleAgentResponse(response);
+      if (approved) {
+        refreshOverview();
+        if (currentPage === "diagnostics") loadInventory("diagnostics");
+      }
+    } catch (error) {
+      appendMessage("system", error.message);
+    } finally {
+      document.getElementById("approval-accept").disabled = false;
+      document.getElementById("approval-deny").disabled = false;
+      setAgentBusy(false);
+    }
+  }
+
+  async function newAgentSession() {
+    if (agentSession) {
+      await call("/api/v1/agent/session/reset", {
+        method: "POST", headers: { "content-type": "application/json" },
+        body: JSON.stringify({ session_id: agentSession })
+      }).catch(() => {});
+    }
+    agentSession = "";
+    resetAgentMessages();
+  }
+
+  async function loadBackups() {
+    const target = document.getElementById("backup-output");
+    if (!target) return;
+    setLoading(target);
+    try {
+      const response = await call("/api/v1/config/backups");
+      const items = response.backups || [];
+      text("backup-count", items.length);
+      if (!items.length) {
+        target.replaceChildren(el("div", "empty", "暂无配置备份。"));
+        return;
+      }
+      const wrap = el("div", "table-wrap");
+      const table = document.createElement("table");
+      const thead = document.createElement("thead");
+      const head = document.createElement("tr");
+      ["创建时间", "大小", "SHA-256", "操作"].forEach(value => head.append(el("th", "", value)));
+      thead.append(head);
+      const tbody = document.createElement("tbody");
+      items.forEach(item => {
+        const row = document.createElement("tr");
+        row.append(el("td", "", item.created_at), el("td", "", item.bytes + " B"), el("td", "", item.sha256));
+        const actionCell = document.createElement("td");
+        const button = el("button", "btn secondary", "恢复");
+        button.addEventListener("click", () => restoreBackup(item.backup_id));
+        actionCell.append(button);
+        row.append(actionCell);
+        tbody.append(row);
+      });
+      table.append(thead, tbody);
+      wrap.append(table);
+      target.replaceChildren(wrap);
+    } catch (error) {
+      renderError(target, error);
+    }
+  }
+
+  async function createBackup() {
+    try {
+      await call("/api/v1/config/backups", { method: "POST", headers: { "content-type": "application/json" }, body: "{}" });
+      await loadBackups();
+    } catch (error) {
+      renderError("backup-output", error);
+    }
+  }
+
+  async function restoreBackup(backupID) {
+    if (!confirm("恢复前会自动保留当前配置，并先验证目标快照。继续吗？")) return;
+    try {
+      await call("/api/v1/config/restore", {
+        method: "POST", headers: { "content-type": "application/json" },
+        body: JSON.stringify({ backup_id: backupID })
+      });
+      await loadBackups();
+      await refreshOverview();
+    } catch (error) {
+      renderError("backup-output", error);
+    }
+  }
+
+  async function installPreflight() {
+    setLoading("install-operation");
+    try { renderInto("install-operation", await call("/api/v1/runtime/install-preflight")); }
+    catch (error) { if (error.body && error.body.report) renderInto("install-operation", error.body); else renderError("install-operation", error); }
+  }
+
+  async function installOpenClaw() {
+    if (!confirm("安装固定审核版本的 OpenClaw？现有不兼容版本会被预检阻止。")) return;
+    setLoading("install-operation", "正在安装…");
+    try {
+      renderInto("install-operation", await call("/api/v1/runtime/install", {
+        method: "POST", headers: { "content-type": "application/json" }, body: '{"confirm":true}'
+      }));
+      await refreshOverview();
+    } catch (error) { renderError("install-operation", error); }
+  }
+
+  async function managerUpdate(action) {
+    setLoading("update-operation");
+    try {
+      const options = action ? {
+        method: "POST", headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action, confirm: true })
+      } : {};
+      renderInto("update-operation", await call("/api/v1/manager-update", options));
+    } catch (error) {
+      if (error.body && Object.keys(error.body).length > 1) renderInto("update-operation", error.body);
+      else renderError("update-operation", error);
+    }
+  }
+
+  document.querySelectorAll("[data-view]").forEach(node => node.addEventListener("click", () => activate(node.dataset.view)));
+  document.querySelectorAll("[data-jump]").forEach(node => node.addEventListener("click", () => activate(node.dataset.jump)));
+  document.querySelectorAll("[data-load-kind]").forEach(node => node.addEventListener("click", () => loadInventory(node.dataset.loadKind)));
+  document.querySelectorAll("[data-control]").forEach(node => node.addEventListener("click", () => control(node.dataset.control, node)));
+  document.querySelectorAll("[data-agent-prompt]").forEach(node => node.addEventListener("click", () => sendAgent(node.dataset.agentPrompt)));
+  document.getElementById("agent-config-save").addEventListener("click", saveAgentConfig);
+  document.getElementById("agent-config-test").addEventListener("click", () => testAgentConnection(false));
+  document.getElementById("agent-config-delete").addEventListener("click", deleteAgentConfig);
+  document.getElementById("agent-send").addEventListener("click", () => sendAgent(document.getElementById("agent-input").value));
+  document.getElementById("agent-input").addEventListener("keydown", event => {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      sendAgent(event.currentTarget.value);
+    }
+  });
+  document.getElementById("approval-accept").addEventListener("click", () => resolveApproval(true));
+  document.getElementById("approval-deny").addEventListener("click", () => resolveApproval(false));
+  document.getElementById("agent-new-session").addEventListener("click", newAgentSession);
+  document.getElementById("open-dashboard").addEventListener("click", event => control("dashboard", event.currentTarget));
+  document.getElementById("overview-refresh").addEventListener("click", refreshOverview);
+  document.getElementById("backup-refresh").addEventListener("click", loadBackups);
+  document.getElementById("backup-create").addEventListener("click", createBackup);
+  document.getElementById("preflight").addEventListener("click", installPreflight);
+  document.getElementById("install").addEventListener("click", installOpenClaw);
+  document.getElementById("update-check").addEventListener("click", () => managerUpdate(""));
+  document.getElementById("update-download").addEventListener("click", () => managerUpdate("download"));
+  document.getElementById("update-apply").addEventListener("click", () => managerUpdate("apply"));
+  document.getElementById("theme").addEventListener("click", () => {
+    const dark = !document.documentElement.classList.contains("dark");
+    document.documentElement.classList.toggle("dark", dark);
+    localStorage.setItem("theme", dark ? "dark" : "light");
+  });
+
+  if (localStorage.getItem("theme") === "dark") document.documentElement.classList.add("dark");
+  resetAgentMessages();
+  setAgentBusy(false);
+  refreshOverview();
+  loadBackups();
 </script>
 </body>
 </html>

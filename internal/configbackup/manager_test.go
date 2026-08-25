@@ -111,3 +111,84 @@ func TestRejectsOverlappingPathsAndSymlinkConfig(t *testing.T) {
 		t.Fatal("expected symlink config rejection")
 	}
 }
+
+func TestMutationCheckpointRestoresExistingConfig(t *testing.T) {
+	root := t.TempDir()
+	configPath := filepath.Join(root, "native", "openclaw.json")
+	if err := os.MkdirAll(filepath.Dir(configPath), 0700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(configPath, []byte(`{"before":true}`), 0600); err != nil {
+		t.Fatal(err)
+	}
+	manager, err := New(configPath, filepath.Join(root, "backups"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	checkpoint, err := manager.BeginMutation()
+	if err != nil || !checkpoint.ConfigExisted || checkpoint.Backup == nil {
+		t.Fatalf("unexpected checkpoint: %#v err=%v", checkpoint, err)
+	}
+	if err := os.WriteFile(configPath, []byte(`{"broken":true}`), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := manager.RollbackMutation(checkpoint, func(string) error { return nil }); err != nil {
+		t.Fatal(err)
+	}
+	data, err := os.ReadFile(configPath)
+	if err != nil || string(data) != `{"before":true}` {
+		t.Fatalf("existing config was not restored: data=%q err=%v", data, err)
+	}
+}
+
+func TestMutationCheckpointRestoresPriorAbsence(t *testing.T) {
+	root := t.TempDir()
+	configPath := filepath.Join(root, "native", "openclaw.json")
+	manager, err := New(configPath, filepath.Join(root, "backups"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	checkpoint, err := manager.BeginMutation()
+	if err != nil || checkpoint.ConfigExisted || checkpoint.Backup != nil {
+		t.Fatalf("unexpected checkpoint: %#v err=%v", checkpoint, err)
+	}
+	if err := os.MkdirAll(filepath.Dir(configPath), 0700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(configPath, []byte(`{"generated":true}`), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := manager.RollbackMutation(checkpoint, func(string) error { return nil }); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(configPath); !os.IsNotExist(err) {
+		t.Fatalf("generated config should have been removed: %v", err)
+	}
+}
+
+func TestValidateActiveUsesOpaqueCopy(t *testing.T) {
+	root := t.TempDir()
+	configPath := filepath.Join(root, "openclaw.json")
+	if err := os.WriteFile(configPath, []byte(`{"valid":true}`), 0600); err != nil {
+		t.Fatal(err)
+	}
+	manager, err := New(configPath, filepath.Join(root, "backups"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := manager.ValidateActive(func(candidate string) error {
+		if candidate == configPath {
+			t.Fatal("validator received active config path")
+		}
+		data, readErr := os.ReadFile(candidate)
+		if readErr != nil {
+			return readErr
+		}
+		if string(data) != `{"valid":true}` {
+			t.Fatalf("unexpected candidate: %q", data)
+		}
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+}
