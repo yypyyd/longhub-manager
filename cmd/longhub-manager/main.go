@@ -18,11 +18,14 @@ import (
 
 	"github.com/yypyyd/longhub-manager/internal/configbackup"
 	"github.com/yypyyd/longhub-manager/internal/httpapi"
+	"github.com/yypyyd/longhub-manager/internal/manageragent"
 	"github.com/yypyyd/longhub-manager/internal/managerupdate"
 	"github.com/yypyyd/longhub-manager/internal/runtime"
 )
 
 func main() {
+	enableHighDPI()
+
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	mode, modeErr := parseManagerStartupMode(os.Args[1:])
@@ -35,6 +38,9 @@ func main() {
 		if err := removeManagerAutostart(removeCtx); err != nil {
 			log.Fatalf("移除自动启动失败: %v", err)
 		}
+		return
+	}
+	if mode == managerStartupInteractive && activateExistingManager() {
 		return
 	}
 
@@ -70,16 +76,35 @@ func main() {
 	} else {
 		configBackups = manager
 	}
+	var agentConfig *manageragent.ConfigStore
+	if store, agentErr := newManagerAgentConfigStore(os.UserConfigDir); agentErr != nil {
+		log.Printf("LongHub 管家模型配置暂不可用")
+	} else {
+		agentConfig = store
+	}
 	port := envPort("LONGHUB_MANAGER_PORT", 19527)
 	listener, err := net.Listen("tcp4", net.JoinHostPort("127.0.0.1", strconv.Itoa(port)))
 	if err != nil {
-		log.Fatalf("无法绑定本地管家端口: %v", err)
+		if mode == managerStartupInteractive {
+			// Prefer activating this version's existing tray instance. If an older
+			// browser-based Manager owns the legacy port, use a fresh loopback port
+			// so installing the desktop build is immediately effective.
+			if activateExistingManager() {
+				return
+			}
+			listener, err = net.Listen("tcp4", "127.0.0.1:0")
+		}
+		if err != nil {
+			log.Fatalf("无法绑定本地管家端口: %v", err)
+		}
 	}
 	defer listener.Close()
 
 	server := httpapi.NewServerWithOptions(adapter, token, httpapi.ServerOptions{
 		ConfigBackups: configBackups,
 		ManagerUpdate: managerUpdater,
+		AgentConfig:   agentConfig,
+		AgentModel:    manageragent.NewModelClient(nil),
 	})
 
 	go func() {
@@ -94,6 +119,7 @@ func main() {
 	if err := startPlatformTray(ctx, stop, managerPageURL(listener.Addr().String(), token), mode == managerStartupInteractive); err != nil {
 		log.Printf("系统托盘暂不可用")
 	}
+	defer closeEmbeddedManagerWindow()
 	if mode == managerStartupGateway {
 		go func() {
 			if launchErr := superviseAutostartGateway(ctx, adapter); launchErr != nil && !errors.Is(launchErr, context.Canceled) {
@@ -194,6 +220,21 @@ func newConfigBackupManager(
 		return nil, errors.New("用户配置目录必须是绝对路径")
 	}
 	return configbackup.New(configPath, filepath.Join(configDir, "LongHub", "backups"))
+}
+
+func newManagerAgentConfigStore(userConfigDir func() (string, error)) (*manageragent.ConfigStore, error) {
+	if userConfigDir == nil {
+		return nil, errors.New("无法确定 LongHub Manager 配置目录")
+	}
+	configDir, err := userConfigDir()
+	if err != nil || strings.TrimSpace(configDir) == "" || !filepath.IsAbs(configDir) {
+		return nil, errors.New("无法确定 LongHub Manager 配置目录")
+	}
+	longHubDir := filepath.Join(filepath.Clean(configDir), "LongHub")
+	return manageragent.NewConfigStore(
+		filepath.Join(longHubDir, "manager-agent.json"),
+		manageragent.NewPlatformSecretStore(filepath.Join(longHubDir, "manager-agent.key")),
+	)
 }
 
 func startupToken() (string, error) {

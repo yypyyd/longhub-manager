@@ -49,6 +49,7 @@ try {
     '-product-name', 'LongHub Manager',
     '-trademark', 'LongHub is a trademark of its respective owner',
     '-propagate-ver-strings',
+    '-manifest', (Join-Path $managerRoot 'scripts\longhub-manager.manifest'),
     (Join-Path $managerRoot 'scripts\versioninfo.json')
   )
   & go tool goversioninfo @versionInfoArguments

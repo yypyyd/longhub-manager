@@ -46,6 +46,14 @@ func ResolveOpenClaw(ctx context.Context, runner CommandRunner) (string, error) 
 	return findOpenClaw(ctx, runner)
 }
 
+// PrepareNativeCommand applies the platform's fixed command normalization to
+// a command discovered by the trusted runtime adapter. It is used by the
+// startup supervisor as well as captured-output probes so an OpenClaw npm shim
+// cannot reintroduce a visible console window.
+func PrepareNativeCommand(name string, args ...string) (string, []string) {
+	return resolveWindowsShimCommand(name, args)
+}
+
 // LookPath keeps the standard PATH behavior and adds only fixed Windows npm
 // shim locations. It never searches inside LongHub's installation directory.
 func (OSCommandRunner) LookPath(file string) (string, error) {
@@ -72,7 +80,10 @@ func (r OSCommandRunner) ResolveOpenClaw(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", errors.New("openclaw and npm are not on PATH")
 	}
-	output, err := exec.CommandContext(ctx, npm, "prefix", "-g").Output()
+	npm, npmArgs := resolveWindowsShimCommand(npm, []string{"prefix", "-g"})
+	command := exec.CommandContext(ctx, npm, npmArgs...)
+	configureBackgroundCommand(command)
+	output, err := command.Output()
 	if err != nil {
 		return "", errors.New("npm global prefix unavailable")
 	}

@@ -8,5 +8,5 @@ import (
 )
 
 func configureGatewayCommand(command *exec.Cmd) {
-	command.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+	command.SysProcAttr = &syscall.SysProcAttr{HideWindow: true, CreationFlags: 0x08000000}
 }

@@ -49,6 +49,7 @@ func (nativeWindowsScheduledTaskQueryRunner) Query(parent context.Context, taskP
 		"-EncodedCommand",
 		encodePowerShell(taskSchedulerXMLProbeScript),
 	)
+	configureBackgroundCommand(command)
 	var stdout, stderr boundedTaskOutput
 	command.Stdout = &stdout
 	command.Stderr = &stderr
@@ -123,6 +124,7 @@ func runScheduledTaskLifecycleCommand(parent context.Context, executable string,
 	ctx, cancel := context.WithTimeout(parent, scheduledTaskLifecycleTimeout)
 	defer cancel()
 	command := exec.CommandContext(ctx, executable, args...)
+	configureBackgroundCommand(command)
 	// Output is discarded but bounded so a hostile localized schtasks build
 	// cannot balloon memory; no raw text is surfaced to callers either way.
 	var stdout, stderr boundedTaskOutput

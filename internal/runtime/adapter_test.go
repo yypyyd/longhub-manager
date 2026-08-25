@@ -85,6 +85,62 @@ func (f *fakeRunner) Run(_ context.Context, name string, args ...string) ([]byte
 	return []byte(f.output), f.runErr
 }
 
+func TestRepairRequiresConfirmationAndUsesFixedDoctorCommand(t *testing.T) {
+	runner := &fakeRunner{path: "openclaw", output: "repair complete"}
+	adapter := NewNativeAdapter(runner)
+
+	if _, err := adapter.Repair(context.Background(), false); !errors.Is(err, ErrRepairConfirmationRequired) {
+		t.Fatalf("expected confirmation error, got %v", err)
+	}
+	if runner.lastName != "" {
+		t.Fatalf("repair must not invoke OpenClaw before confirmation: %q", runner.lastName)
+	}
+
+	output, err := adapter.Repair(context.Background(), true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if output != "repair complete" || runner.lastName != "openclaw" || !slicesEqual(runner.lastArgs, []string{"doctor", "--fix", "--non-interactive"}) {
+		t.Fatalf("unexpected repair invocation: output=%q name=%q args=%v", output, runner.lastName, runner.lastArgs)
+	}
+}
+
+func slicesEqual(left, right []string) bool {
+	if len(left) != len(right) {
+		return false
+	}
+	for index := range left {
+		if left[index] != right[index] {
+			return false
+		}
+	}
+	return true
+}
+
+func TestOpenDashboardUsesFixedOpenClawCommand(t *testing.T) {
+	runner := &fakeRunner{path: "openclaw", output: "http://127.0.0.1:18789/?token=secret"}
+	adapter := NewNativeAdapter(runner)
+	if err := adapter.OpenDashboard(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if runner.lastName != "openclaw" || !slicesEqual(runner.lastArgs, []string{"dashboard"}) {
+		t.Fatalf("unexpected dashboard invocation: name=%q args=%v", runner.lastName, runner.lastArgs)
+	}
+}
+
+func TestBoundedCommandOutputStoresPrefixAndSignalsLimit(t *testing.T) {
+	output := &boundedCommandOutput{max: 5}
+	if written, err := output.Write([]byte("123")); err != nil || written != 3 {
+		t.Fatalf("unexpected first write: n=%d err=%v", written, err)
+	}
+	if written, err := output.Write([]byte("456789")); err != nil || written != 6 {
+		t.Fatalf("unexpected second write: n=%d err=%v", written, err)
+	}
+	if string(output.data) != "12345" || !output.truncated {
+		t.Fatalf("unexpected bounded output: data=%q truncated=%v", output.data, output.truncated)
+	}
+}
+
 func (f *fakeRunner) InstallFreeBytes(context.Context, string) (int64, error) {
 	if f.diskErr != nil {
 		return 0, f.diskErr

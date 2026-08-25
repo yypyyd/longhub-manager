@@ -91,7 +91,8 @@ func runAutostartGateway(
 	ctx context.Context,
 	command string,
 ) error {
-	process := exec.CommandContext(ctx, command, "gateway", "run")
+	command, args := managerRuntime.PrepareNativeCommand(command, "gateway", "run")
+	process := exec.CommandContext(ctx, command, args...)
 	process.Stdin = nil
 	process.Stdout = io.Discard
 	process.Stderr = io.Discard

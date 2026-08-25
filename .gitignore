@@ -1,6 +1,9 @@
 /release/
 /.stage-*/
+.playwright-cli/
+output/playwright/
 *.exe
+*.exe~
 *.msi
 *.pfx
 *.p12

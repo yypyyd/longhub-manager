@@ -59,7 +59,9 @@ Section "LongHub Manager" SEC_MAIN
   WriteRegDWORD HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\LongHubManager" "NoModify" 1
   WriteRegDWORD HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\LongHubManager" "NoRepair" 1
 
+  IfSilent install_complete 0
   ExecShell "open" "$INSTDIR\LongHubManager.exe"
+install_complete:
 SectionEnd
 
 Section "Uninstall"
